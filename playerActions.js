@@ -5,7 +5,6 @@
 import { playerData } from './playerState.js';
 import { getRandomElement } from './utils.js';
 import { updateLayout } from './game.js';
-import { isMultiplayerGame, sendPresenceUpdate, getLocalPlayerNum } from './multiplayer.js';
 
 // Define available avatars
 export const AVATAR_SVGS = [
@@ -44,15 +43,8 @@ export function updateAvatarPreview(playerNum, avatarUrl) {
  * @param {string} avatarUrl - The URL of the selected avatar.
  */
 export function selectAvatar(playerNum, avatarUrl) {
-    if (isMultiplayerGame() && playerNum !== getLocalPlayerNum()) {
-        return; // Prevent opponent's avatar from being changed
-    }
     playerData[playerNum].avatar = avatarUrl;
-    if (isMultiplayerGame()) {
-        sendPresenceUpdate({ avatar: avatarUrl });
-    } else {
-        localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
-    }
+    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
     // The preview and title will be updated by updateLayout when it's called after selection/modal close.
     updateLayout();
 }
@@ -65,33 +57,20 @@ export function confirmName(playerNum) {
     const input = document.getElementById(`player${playerNum}-name`);
     const name = input.value.trim();
     
-    if (isMultiplayerGame() && playerNum !== getLocalPlayerNum()) {
-        return; // Prevent confirming name for the opponent
-    }
-
     if (!name) {
         alert('Please enter a name!');
         return;
     }
     
     playerData[playerNum].name = name;
-    playerData[playerNum].isSetupStarted = true; // Mark setup as started
 
     // If no avatar selected, pick a random one
     if (!playerData[playerNum].avatar) {
         playerData[playerNum].avatar = getRandomElement(AVATAR_SVGS);
     }
     
-    if (isMultiplayerGame()) {
-        // Send all relevant updates at once. The UI will update via handleStateUpdate.
-        sendPresenceUpdate({ 
-            name: playerData[playerNum].name, 
-            avatar: playerData[playerNum].avatar,
-            isSetupStarted: true 
-        });
-    } else {
-        localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum])); // Save state after name confirmation
-        // For local play, we still need to manually trigger the update.
-        updateLayout(false);
-    }
+    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum])); // Save state after name confirmation
+    
+    // Update layout based on the new name confirmed state
+    updateLayout(false); // Pass false to prevent turn switch on name confirm
 }

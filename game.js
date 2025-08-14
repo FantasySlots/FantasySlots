@@ -9,7 +9,6 @@ import { getOrCreateChild, updatePlayerContentDisplay, displayDraftInterface, di
 import { showSlotSelectionModal, hideSlotSelectionModal, hideRosterModal, showPlayerStatsModal, hidePlayerStatsModal, renderPlayerStatsInModal, showAvatarSelectionModal, hideAvatarSelectionModal } from './uiModals.js';
 import { confirmName, selectAvatar, updateAvatarPreview, AVATAR_SVGS } from './playerActions.js';
 import { selectTeam, autoDraft, draftPlayer, resetPlayer } from './gameFlow.js';
-import { initMultiplayer, isMultiplayerGame, getLocalPlayerNum, sendRoomStateUpdate } from './multiplayer.js';
 
 // Import API functions
 import { getTank01PlayerID, fetchLastGameStats } from './api.js';
@@ -70,31 +69,17 @@ async function fetchAndDisplayPlayerFantasyPoints(playerNum) {
  * @param {boolean} shouldSwitchTurn - Whether to switch the current player turn.
  */
 export function updateLayout(shouldSwitchTurn = false) {
-    // In multiplayer, phase transitions are handled by the server state updates.
-    // For local play, we manage it here.
-    if (!isMultiplayerGame()) {
-        if (gameState.phase === 'NAME_ENTRY' && playerData[1].name && playerData[2].name) {
-            setGamePhase('DRAFTING');
-        }
+    // Check game phase transition
+    if (gameState.phase === 'NAME_ENTRY' && playerData[1].name && playerData[2].name) {
+        setGamePhase('DRAFTING');
+    }
 
-        if (shouldSwitchTurn && gameState.phase === 'DRAFTING') {
-            switchTurn();
-        }
-        
-        if (isFantasyRosterFull(1) && isFantasyRosterFull(2)) {
-            setGamePhase('COMPLETE');
-        }
-    } else {
-        // In multiplayer, the host (player 1) is responsible for phase transitions
-        const localPlayerNum = getLocalPlayerNum();
-        if (localPlayerNum === 1) {
-            if (gameState.phase === 'NAME_ENTRY' && playerData[1]?.name && playerData[2]?.name) {
-                sendRoomStateUpdate({ gamePhase: 'DRAFTING' });
-            }
-            if (isFantasyRosterFull(1) && isFantasyRosterFull(2) && gameState.phase !== 'COMPLETE') {
-                 sendRoomStateUpdate({ gamePhase: 'COMPLETE' });
-            }
-        }
+    if (shouldSwitchTurn && gameState.phase === 'DRAFTING') {
+        switchTurn();
+    }
+    
+    if (isFantasyRosterFull(1) && isFantasyRosterFull(2)) {
+        setGamePhase('COMPLETE');
     }
 
     const playersContainer = document.querySelector('.players-container');
@@ -104,8 +89,6 @@ export function updateLayout(shouldSwitchTurn = false) {
     const addPlayer2Button = document.getElementById('add-player2-btn');
     addPlayer2Button.style.display = 'none'; // This button is no longer needed
 
-    const localPlayerNum = getLocalPlayerNum();
-
     // Update internal display for each player section based on their individual state
     [1, 2].forEach(playerNum => {
         const playerSection = document.getElementById(`player${playerNum}-section`);
@@ -114,31 +97,26 @@ export function updateLayout(shouldSwitchTurn = false) {
         const playerLogoEl = document.getElementById(`player${playerNum}-logo`);
         const playerContentArea = document.getElementById(`player${playerNum}-content-area`);
         const isCurrentPlayerRosterFull = isFantasyRosterFull(playerNum);
-
-        // Multiplayer: Disable interaction for the non-local player
-        if (isMultiplayerGame() && localPlayerNum > 0 && playerNum !== localPlayerNum) {
-            nameInputContainer.querySelectorAll('input, button, .selected-avatar-preview').forEach(el => {
-                el.disabled = true;
-                if(el.tagName !== 'BUTTON') el.style.pointerEvents = 'none';
-            });
-            nameInputContainer.style.opacity = '0.6';
-        } else {
-             nameInputContainer.querySelectorAll('input, button, .selected-avatar-preview').forEach(el => {
-                el.disabled = false;
-                if(el.tagName !== 'BUTTON') el.style.pointerEvents = 'auto';
-            });
-            nameInputContainer.style.opacity = '1';
-        }
+        const readyMessageEl = document.getElementById(`player${playerNum}-ready-message`);
 
         // Handle visibility of name input vs team display based on game phase
-        // Show name input if in NAME_ENTRY phase AND this specific player hasn't confirmed a name yet.
-        if (gameState.phase === 'NAME_ENTRY' && !playerData[playerNum].name) {
-            nameInputContainer.style.display = 'flex';
-            playerDisplayDiv.style.display = 'none';
+        if (gameState.phase === 'NAME_ENTRY') {
             playerSection.classList.remove('active-turn', 'inactive-turn');
-            renderPlayerAvatar(playerNum, `Player ${playerNum}`, null);
-        } else { // DRAFTING, COMPLETE, or NAME_ENTRY phase where name is already set
+            playerDisplayDiv.style.display = 'none';
+
+            if (playerData[playerNum].name) { // Player has confirmed their name
+                nameInputContainer.style.display = 'none';
+                readyMessageEl.textContent = `${playerData[playerNum].name} is ready`;
+                readyMessageEl.style.display = 'block';
+                renderPlayerAvatar(playerNum, playerData[playerNum].name, playerData[playerNum].avatar);
+            } else { // Player has not confirmed name
+                nameInputContainer.style.display = 'flex';
+                readyMessageEl.style.display = 'none';
+                renderPlayerAvatar(playerNum, `Player ${playerNum}`, null);
+            }
+        } else { // DRAFTING or COMPLETE phase
             nameInputContainer.style.display = 'none';
+            readyMessageEl.style.display = 'none';
             playerDisplayDiv.style.display = 'block';
 
             // Update player title with name and avatar
@@ -211,110 +189,112 @@ export function updateLayout(shouldSwitchTurn = false) {
 }
 
 /**
+ * Function to handle adding Player 2, typically called by a button.
+ */
+function addPlayer2() {
+    // This function is now obsolete with the new flow but kept to prevent errors if called.
+    console.log("addPlayer2 is obsolete and should not be called.");
+}
+
+/**
  * Initializes the application on DOMContentLoaded.
  * Sets up event listeners and loads saved data.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    // NEW: Check for multiplayer mode and initialize if needed.
-    initMultiplayer().then(() => {
-        // The rest of the initialization logic runs after multiplayer setup.
-        // This ensures that local storage logic doesn't conflict with server state.
+    // Attach event listeners for player 1
+    document.getElementById('player1-name-confirm-btn').addEventListener('click', () => confirmName(1));
+    document.getElementById('player1-select-team-btn').addEventListener('click', () => selectTeam(1));
+    document.getElementById('player1-auto-draft-btn').addEventListener('click', () => autoDraft(1));
+    document.getElementById('player1-reset-btn').addEventListener('click', () => resetPlayer(1));
 
-        // Attach event listeners for player 1
-        document.getElementById('player1-name-confirm-btn').addEventListener('click', () => confirmName(1));
-        document.getElementById('player1-select-team-btn').addEventListener('click', () => selectTeam(1));
-        document.getElementById('player1-auto-draft-btn').addEventListener('click', () => autoDraft(1));
-        document.getElementById('player1-reset-btn').addEventListener('click', () => resetPlayer(1));
+    // Attach event listeners for player 2
+    document.getElementById('player2-name-confirm-btn').addEventListener('click', () => confirmName(2));
+    document.getElementById('player2-select-team-btn').addEventListener('click', () => selectTeam(2));
+    document.getElementById('player2-auto-draft-btn').addEventListener('click', () => autoDraft(2));
+    document.getElementById('player2-reset-btn').addEventListener('click', () => resetPlayer(2));
 
-        // Attach event listeners for player 2
-        document.getElementById('player2-name-confirm-btn').addEventListener('click', () => confirmName(2));
-        document.getElementById('player2-select-team-btn').addEventListener('click', () => selectTeam(2));
-        document.getElementById('player2-auto-draft-btn').addEventListener('click', () => autoDraft(2));
-        document.getElementById('player2-reset-btn').addEventListener('click', () => resetPlayer(2));
+    // Attach event listener for the new Add Player 2 button
+    document.getElementById('add-player2-btn').addEventListener('click', addPlayer2);
 
-        // Attach event listeners for modals (using IDs for direct access)
-        document.querySelector('.close-roster').addEventListener('click', hideRosterModal); 
-        document.querySelector('.cancel-slot-selection').addEventListener('click', hideSlotSelectionModal);
-        document.querySelector('.close-stats').addEventListener('click', hidePlayerStatsModal);
-        document.querySelector('.close-avatar-modal').addEventListener('click', hideAvatarSelectionModal); 
+    // Attach event listeners for modals (using IDs for direct access)
+    document.querySelector('.close-roster').addEventListener('click', hideRosterModal); 
+    document.querySelector('.cancel-slot-selection').addEventListener('click', hideSlotSelectionModal);
+    document.querySelector('.close-stats').addEventListener('click', hidePlayerStatsModal);
+    document.querySelector('.close-avatar-modal').addEventListener('click', hideAvatarSelectionModal); 
 
-        // Handle outside clicks for modals
-        window.addEventListener('click', (event) => {
-            const rosterModal = document.getElementById('roster-modal');
-            const statsModal = document.getElementById('player-stats-modal');
-            const slotModal = document.getElementById('slot-selection-modal');
-            const avatarModal = document.getElementById('avatar-selection-modal'); 
+    // Handle outside clicks for modals
+    window.addEventListener('click', (event) => {
+        const rosterModal = document.getElementById('roster-modal');
+        const statsModal = document.getElementById('player-stats-modal');
+        const slotModal = document.getElementById('slot-selection-modal');
+        const avatarModal = document.getElementById('avatar-selection-modal'); 
 
-            if (event.target === rosterModal) {
-                hideRosterModal(); 
-            }
-            if (event.target === statsModal) {
-                hidePlayerStatsModal();
-            }
-            if (event.target === slotModal) { 
-                hideSlotSelectionModal();
-            }
-            if (event.target === avatarModal) { 
-                hideAvatarSelectionModal();
-            }
-        });
+        if (event.target === rosterModal) {
+            hideRosterModal(); 
+        }
+        if (event.target === statsModal) {
+            hidePlayerStatsModal();
+        }
+        if (event.target === slotModal) { 
+            hideSlotSelectionModal();
+        }
+        if (event.target === avatarModal) { 
+            hideAvatarSelectionModal();
+        }
+    });
 
-        // Add click listener to avatar previews to open the avatar selection modal
-        document.getElementById('player1-avatar-preview').addEventListener('click', () => {
-            showAvatarSelectionModal(1, playerData[1].avatar, AVATAR_SVGS, selectAvatar);
-        });
-        document.getElementById('player2-avatar-preview').addEventListener('click', () => {
-            showAvatarSelectionModal(2, playerData[2].avatar, AVATAR_SVGS, selectAvatar);
-        });
+    // Add click listener to avatar previews to open the avatar selection modal
+    document.getElementById('player1-avatar-preview').addEventListener('click', () => {
+        showAvatarSelectionModal(1, playerData[1].avatar, AVATAR_SVGS, selectAvatar);
+    });
+    document.getElementById('player2-avatar-preview').addEventListener('click', () => {
+        showAvatarSelectionModal(2, playerData[2].avatar, AVATAR_SVGS, selectAvatar);
+    });
 
-        // For local play, load from localStorage. For multiplayer, state is handled by the server.
-        if (!isMultiplayerGame()) {
-            // Load saved data for both players and initialize playerData structure
-            [1, 2].forEach(playerNum => {
-                const savedData = localStorage.getItem(`fantasyTeam_${playerNum}`);
-                
-                // Ensure playerData structure is correctly initialized, filling in missing fields for old saves
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    playerData[playerNum] = { 
-                        name: parsed.name || '', 
-                        avatar: parsed.avatar || null, 
-                        team: parsed.team || null, 
-                        draftedPlayers: parsed.draftedPlayers || [], 
-                        rosterSlots: parsed.rosterSlots || {
-                            QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null
-                        },
-                        isSetupStarted: parsed.isSetupStarted || false 
-                    };
+    // Load saved data for both players and initialize playerData structure
+    [1, 2].forEach(playerNum => {
+        const savedData = localStorage.getItem(`fantasyTeam_${playerNum}`);
+        
+        // Ensure playerData structure is correctly initialized, filling in missing fields for old saves
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+            playerData[playerNum] = { 
+                name: parsed.name || '', 
+                avatar: parsed.avatar || null, 
+                team: parsed.team || null, 
+                draftedPlayers: parsed.draftedPlayers || [], 
+                rosterSlots: parsed.rosterSlots || {
+                    QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null
+                },
+                isSetupStarted: parsed.isSetupStarted || false 
+            };
 
-                    // Ensure fantasyPoints and statsData field is initialized for loaded players if not present (for old saves)
-                    for (const slot in playerData[playerNum].rosterSlots) {
-                        if (playerData[playerNum].rosterSlots[slot] && playerData[playerNum].rosterSlots[slot].fantasyPoints === undefined) {
-                            playerData[playerNum].rosterSlots[slot].fantasyPoints = null;
-                            playerData[playerNum].rosterSlots[slot].statsData = null;
-                        }
-                    }
-                } else {
-                    // If no saved data, ensure base player data is set (it's already set by default export, but explicit is good)
-                    playerData[playerNum] = { 
-                        name: '', avatar: null, team: null, draftedPlayers: [], 
-                        rosterSlots: { QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null },
-                        isSetupStarted: false
-                    };
+            // Ensure fantasyPoints and statsData field is initialized for loaded players if not present (for old saves)
+            for (const slot in playerData[playerNum].rosterSlots) {
+                if (playerData[playerNum].rosterSlots[slot] && playerData[playerNum].rosterSlots[slot].fantasyPoints === undefined) {
+                    playerData[playerNum].rosterSlots[slot].fantasyPoints = null;
+                    playerData[playerNum].rosterSlots[slot].statsData = null;
                 }
-                
-                // Populate name input field from loaded data
-                document.getElementById(`player${playerNum}-name`).value = playerData[playerNum].name;
-
-                // Note: No direct style.display manipulation here. updateLayout will handle it.
-            });
-            
-            // On initial load for local game, reset all game state to ensure a clean start for the new flow.
-            resetPlayer(1);
-            resetPlayer(2);
+            }
+        } else {
+            // If no saved data, ensure base player data is set (it's already set by default export, but explicit is good)
+            playerData[playerNum] = { 
+                name: '', avatar: null, team: null, draftedPlayers: [], 
+                rosterSlots: { QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null },
+                isSetupStarted: false
+            };
         }
         
-        // Call updateLayout AFTER all saved data is loaded to set initial UI state correctly
-        updateLayout(); 
+        // Populate name input field from loaded data
+        document.getElementById(`player${playerNum}-name`).value = playerData[playerNum].name;
+
+        // Note: No direct style.display manipulation here. updateLayout will handle it.
     });
+    
+    // On initial load, reset all game state to ensure a clean start for the new flow.
+    resetPlayer(1);
+    resetPlayer(2);
+    
+    // Call updateLayout AFTER all saved data is loaded to set initial UI state correctly
+    updateLayout(); 
 });

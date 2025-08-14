@@ -3,23 +3,18 @@
  * Contains the core game logic for team selection, drafting, and player state resets.
  */
 import { gameState, playerData, isFantasyRosterFull, resetGameState, switchTurn } from './playerState.js';
-import { shuffleArray } from './utils.js';
+import { shuffleArray, getRandomElement } from './utils.js';
 import { showSlotSelectionModal, hideSlotSelectionModal } from './uiModals.js';
 import { showTeamAnimationOverlay, hideTeamAnimationOverlay } from './uiAnimations.js';
 import { teams } from './data.js';
 import { updateLayout } from './game.js';
-import { isMultiplayerGame, getLocalPlayerNum, sendPresenceUpdate, sendRoomStateUpdate, sendAnimation, getRoom } from './multiplayer.js';
 
 /**
  * Handles the process of selecting a random NFL team.
  * @param {number} playerNum - The player number (1 or 2).
  */
 export async function selectTeam(playerNum) {
-    // In multiplayer, check against local player number
-    if (isMultiplayerGame() && playerNum !== getLocalPlayerNum()) {
-        return; // Not this client's player, do nothing.
-    }
-    if (playerNum !== gameState.currentPlayer) { // Turn check
+    if (playerNum !== gameState.currentPlayer) {
         alert("It's not your turn!");
         return;
     }
@@ -34,11 +29,9 @@ export async function selectTeam(playerNum) {
     playerData[playerNum].draftedPlayers = []; 
     console.log(`Player ${playerNum}: draftedPlayers reset to [] after selecting new team.`);
     
-    document.getElementById(`player${playerNum}-content-area`).innerHTML = '';
-    
-    if (isMultiplayerGame()) {
-        sendAnimation({ type: 'teamAnimation', text: 'Selecting your team...', logoSrc: '', isAvatar: false });
-    }
+    // Clear the player content area immediately for the animation
+    document.getElementById(`player${playerNum}-content-area`).innerHTML = ''; 
+
     showTeamAnimationOverlay('Selecting your team...', '', false); // Show animation overlay
     
     // Animate through logos
@@ -48,9 +41,6 @@ export async function selectTeam(playerNum) {
     
     const animateInterval = setInterval(() => {
         const currentTeamLogo = teams[currentIndex].logo;
-        if (isMultiplayerGame()) {
-            sendAnimation({ type: 'teamAnimation', text: 'Selecting your team...', logoSrc: currentTeamLogo, isAvatar: false });
-        }
         showTeamAnimationOverlay('Selecting your team...', currentTeamLogo, false); // Update logo during animation
         currentIndex = (currentIndex + 1) % teams.length;
     }, interval);
@@ -59,16 +49,12 @@ export async function selectTeam(playerNum) {
     setTimeout(async () => {
         clearInterval(animateInterval);
         const randomTeam = teams[Math.floor(Math.random() * teams.length)];
-        if (isMultiplayerGame()) {
-            sendAnimation({ type: 'teamAnimation', text: `Selected: ${randomTeam.name}`, logoSrc: randomTeam.logo, isAvatar: false });
-        }
+        playerData[playerNum].team = randomTeam; 
+        
         showTeamAnimationOverlay(`Selected: ${randomTeam.name}`, randomTeam.logo, false); 
         
         // Wait a bit then hide animation and update UI
         setTimeout(async () => {
-            if (isMultiplayerGame()) {
-                sendAnimation({ type: 'hideTeamAnimation' });
-            }
             hideTeamAnimationOverlay(); 
             
             // Fetch roster and display draft interface
@@ -77,12 +63,8 @@ export async function selectTeam(playerNum) {
                 const data = await response.json();
                 
                 if (data.athletes) {
-                    playerData[playerNum].team = { ...randomTeam, rosterData: data.athletes };
-                    if (isMultiplayerGame()) {
-                        sendPresenceUpdate({ team: playerData[playerNum].team, draftedPlayers: {} });
-                    } else {
-                        localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
-                    }
+                    playerData[playerNum].team.rosterData = data.athletes; 
+                    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum])); // Save state after team selection
                 }
             } catch (error) {
                 console.error('Error fetching roster:', error);
@@ -131,11 +113,7 @@ function findAvailableSlotForPlayer(playerNum, player) {
  * @param {number} playerNum - The player number (1 or 2).
  */
 export async function autoDraft(playerNum) {
-    // In multiplayer, check against local player number
-    if (isMultiplayerGame() && playerNum !== getLocalPlayerNum()) {
-        return; // Not this client's player, do nothing.
-    }
-    if (playerNum !== gameState.currentPlayer) { // Turn check
+    if (playerNum !== gameState.currentPlayer) {
         alert("It's not your turn!");
         return;
     }
@@ -148,11 +126,9 @@ export async function autoDraft(playerNum) {
         return;
     }
 
-    if (isMultiplayerGame()) {
-        sendAnimation({ type: 'teamAnimation', text: 'Auto-drafting a player...' });
-    }
+    // Show initial animation overlay
     showTeamAnimationOverlay('Auto-drafting a player...');
-    
+
     const animationDuration = 3000; // 3 seconds total
     
     // Animate through player headshots while searching
@@ -193,17 +169,11 @@ export async function autoDraft(playerNum) {
         // If we have headshots, cycle through them. Otherwise, fallback to team logos.
         if (headshotsForAnimation.length > 0) {
             const currentHeadshot = headshotsForAnimation[headshotIndex % headshotsForAnimation.length];
-            if (isMultiplayerGame()) {
-                sendAnimation({ type: 'teamAnimation', text: 'Searching for a player...', logoSrc: currentHeadshot, isAvatar: false });
-            }
             showTeamAnimationOverlay('Searching for a player...', currentHeadshot, false);
             headshotIndex++;
         } else {
             // Fallback to team logos if initial fetch fails or yields no headshots
             const currentTeamLogo = teams[animationTeamIndex % teams.length].logo;
-            if (isMultiplayerGame()) {
-                sendAnimation({ type: 'teamAnimation', text: 'Searching for a player...', logoSrc: currentTeamLogo, isAvatar: false });
-            }
             showTeamAnimationOverlay('Searching for a player...', currentTeamLogo, false);
             animationTeamIndex++;
         }
@@ -218,18 +188,8 @@ export async function autoDraft(playerNum) {
             let chosenPlayer = null;
             let availableSlot = null;
             
-            let opponentRosterIds = new Set();
-            if (isMultiplayerGame()) {
-                const room = getRoom();
-                const otherPlayerId = room.roomState.player1 === room.clientId ? room.roomState.player2 : room.roomState.player1;
-                if (otherPlayerId && room.presence[otherPlayerId]) {
-                    opponentRosterIds = new Set(Object.values(room.presence[otherPlayerId].rosterSlots).filter(p => p).map(p => p.id));
-                }
-            } else {
-                const otherPlayerNum = playerNum === 1 ? 2 : 1;
-                opponentRosterIds = new Set(Object.values(playerData[otherPlayerNum].rosterSlots).filter(p => p).map(p => p.id));
-            }
-
+            const otherPlayerNum = playerNum === 1 ? 2 : 1;
+            const opponentRosterIds = new Set(Object.values(playerData[otherPlayerNum].rosterSlots).filter(p => p).map(p => p.id));
             const ownRosterIds = new Set(Object.values(playerData[playerNum].rosterSlots).filter(p => p).map(p => p.id));
 
             // To avoid an infinite loop if no player is available. Set a max attempts.
@@ -239,7 +199,7 @@ export async function autoDraft(playerNum) {
             while (!draftedPlayer && attempts < maxAttempts) {
                 attempts++;
                 
-                const randomTeam = teams[Math.floor(Math.random() * teams.length)];
+                const randomTeam = getRandomElement(teams);
                 
                 const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${randomTeam.id}/roster`);
                 const data = await response.json();
@@ -277,11 +237,7 @@ export async function autoDraft(playerNum) {
                  // Determine if the headshot is an avatar or a real photo
                  const headshotIsAvatar = !chosenPlayer.headshot?.href || chosenPlayer.originalPosition === 'DEF';
                  const headshotSrc = chosenPlayer.headshot?.href || playerData[playerNum].avatar;
-                
-                if (isMultiplayerGame()) {
-                    sendAnimation({ type: 'teamAnimation', text: `Drafted: ${chosenPlayer.displayName}`, logoSrc: headshotSrc, isAvatar: headshotIsAvatar });
-                }
-                showTeamAnimationOverlay(`Drafted: ${chosenPlayer.displayName}`, headshotSrc, headshotIsAvatar);
+                 showTeamAnimationOverlay(`Drafted: ${chosenPlayer.displayName}`, headshotSrc, headshotIsAvatar);
                 
                 // Assign player to slot
                 playerData[playerNum].rosterSlots[availableSlot] = {
@@ -299,71 +255,40 @@ export async function autoDraft(playerNum) {
                 playerData[playerNum].team = null;
                 playerData[playerNum].draftedPlayers = [];
 
-                if (isMultiplayerGame()) {
-                    const room = getRoom();
-                    const nextPlayerId = room.roomState.player1 === room.clientId ? room.roomState.player2 : room.roomState.player1;
-                    sendPresenceUpdate({ rosterSlots: playerData[playerNum].rosterSlots, team: null, draftedPlayers: {} });
-                    sendRoomStateUpdate({ currentPlayerClientId: nextPlayerId });
-                } else {
-                    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
-                }
-                
+                localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
+
                 setTimeout(() => {
-                    if (isMultiplayerGame()) {
-                        sendAnimation({ type: 'hideTeamAnimation' });
-                    }
                     hideTeamAnimationOverlay();
-                    if (!isMultiplayerGame()) {
-                        updateLayout(true); // Update layout and switch turns
-                    }
+                    updateLayout(true); // Update layout and switch turns
                 }, 1500); // Show drafted player for a bit
             } else {
-                if (isMultiplayerGame()) {
-                    sendAnimation({ type: 'teamAnimation', text: `No draftable player found! Try again.` });
-                }
-                showTeamAnimationOverlay(`No draftable player found! Try again.`);
+                 showTeamAnimationOverlay(`No draftable player found! Try again.`);
                 setTimeout(() => {
-                    if (isMultiplayerGame()) {
-                        sendAnimation({ type: 'hideTeamAnimation' });
-                    }
                     hideTeamAnimationOverlay();
-                    if (!isMultiplayerGame()) {
-                        updateLayout(false); 
-                    }
+                    // Don't switch turns if failed
+                    updateLayout(false); 
                 }, 1500);
             }
 
         } catch (error) {
             console.error('Error during auto-draft:', error);
-            if (isMultiplayerGame()) {
-                sendAnimation({ type: 'teamAnimation', text: 'Auto-draft failed!' });
-            }
             showTeamAnimationOverlay('Auto-draft failed!');
             setTimeout(() => {
-                if (isMultiplayerGame()) {
-                    sendAnimation({ type: 'hideTeamAnimation' });
-                }
                 hideTeamAnimationOverlay();
-                if (!isMultiplayerGame()) {
-                    updateLayout(false); // Do not switch turn on error
-                }
+                updateLayout(false); // Do not switch turn on error
             }, 1500);
         }
     }, animationDuration - 1500); // Start searching before visual animation ends
 }
 
 /**
- * Handles the drafting process for a selected player.
+ * Initiates the drafting process for a selected player.
  * @param {number} playerNum - The player number (1 or 2).
  * @param {object} player - The NFL player object to draft.
  * @param {string} originalPosition - The player's original position (e.g., 'QB', 'RB', 'WR', 'TE', 'K', 'DEF').
  */
 export function draftPlayer(playerNum, player, originalPosition) {
-    // In multiplayer, check against local player number
-    if (isMultiplayerGame() && playerNum !== getLocalPlayerNum()) {
-        return; // Not this client's player, do nothing.
-    }
-    if (playerNum !== gameState.currentPlayer) { // Turn check
+    if (playerNum !== gameState.currentPlayer) {
         alert("It's not your turn!");
         return;
     }
@@ -414,12 +339,7 @@ export function draftPlayer(playerNum, player, originalPosition) {
  * @param {string} slotId - The fantasy roster slot ID (e.g., 'QB', 'RB', 'WR1').
  */
 export function assignPlayerToSlot(playerNum, playerObj, slotId) {
-    // In multiplayer, check against local player number
-    if (isMultiplayerGame() && playerNum !== getLocalPlayerNum()) {
-        hideSlotSelectionModal();
-        return; // Not this client's player, do nothing.
-    }
-    if (playerNum !== gameState.currentPlayer) { // Turn check
+    if (playerNum !== gameState.currentPlayer) {
         console.warn(`ASSIGNMENT BLOCKED: Not Player ${playerNum}'s turn.`);
         alert("It's not your turn!");
         hideSlotSelectionModal();
@@ -435,26 +355,13 @@ export function assignPlayerToSlot(playerNum, playerObj, slotId) {
     }
 
     // NEW: Check if the player has been drafted by the opponent.
-    if (isMultiplayerGame()) {
-        const room = getRoom();
-        const otherPlayerId = room.roomState.player1 === room.clientId ? room.roomState.player2 : room.roomState.player1;
-        if (otherPlayerId && room.presence[otherPlayerId]) {
-            const isDraftedByOpponent = Object.values(room.presence[otherPlayerId].rosterSlots).some(slotPlayer => slotPlayer && slotPlayer.id === playerObj.id);
-            if (isDraftedByOpponent) {
-                alert(`${playerObj.displayName} has already been drafted by ${room.presence[otherPlayerId].name}!`);
-                hideSlotSelectionModal();
-                return;
-            }
-        }
-    } else {
-        const otherPlayerNum = playerNum === 1 ? 2 : 1;
-        if (playerData[otherPlayerNum].name) { // Only check if opponent exists
-            const isDraftedByOpponent = Object.values(playerData[otherPlayerNum].rosterSlots).some(slotPlayer => slotPlayer && slotPlayer.id === playerObj.id);
-            if (isDraftedByOpponent) {
-                alert(`${playerObj.displayName} has already been drafted by ${playerData[otherPlayerNum].name}!`);
-                hideSlotSelectionModal();
-                return;
-            }
+    const otherPlayerNum = playerNum === 1 ? 2 : 1;
+    if (playerData[otherPlayerNum].name) { // Only check if opponent exists
+        const isDraftedByOpponent = Object.values(playerData[otherPlayerNum].rosterSlots).some(slotPlayer => slotPlayer && slotPlayer.id === playerObj.id);
+        if (isDraftedByOpponent) {
+            alert(`${playerObj.displayName} has already been drafted by ${playerData[otherPlayerNum].name}!`);
+            hideSlotSelectionModal();
+            return;
         }
     }
 
@@ -487,25 +394,12 @@ export function assignPlayerToSlot(playerNum, playerObj, slotId) {
 
     playerData[playerNum].draftedPlayers.push({ id: playerObj.id, assignedSlot: slotId });
 
-    if (isMultiplayerGame()) {
-        const room = getRoom();
-        const nextPlayerId = room.roomState.player1 === room.clientId ? room.roomState.player2 : room.roomState.player1;
-        sendPresenceUpdate({
-            rosterSlots: playerData[playerNum].rosterSlots,
-            draftedPlayers: { [playerObj.id]: { id: playerObj.id, assignedSlot: slotId } }, // use object
-            team: null
-        });
-        sendRoomStateUpdate({ currentPlayerClientId: nextPlayerId });
-    } else {
-        localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
-    }
+    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
 
     hideSlotSelectionModal();
     
     // Update layout to reflect the drafted player and switch turns
-    if (!isMultiplayerGame()) {
-        updateLayout(true);
-    }
+    updateLayout(true); 
 }
 
 /**
@@ -513,42 +407,28 @@ export function assignPlayerToSlot(playerNum, playerObj, slotId) {
  * @param {number} playerNum - The player number (1 or 2).
  */
 export function resetPlayer(playerNum) {
-    if (isMultiplayerGame()) {
-        if (playerNum !== getLocalPlayerNum()) return;
-        sendPresenceUpdate({
-            name: '', avatar: null, team: null, draftedPlayers: {},
-            rosterSlots: { QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null },
-            isSetupStarted: false
-        });
-        // Let player 1 handle phase reset
-        if (getLocalPlayerNum() === 1) {
-             sendRoomStateUpdate({ gamePhase: 'NAME_ENTRY', currentPlayerClientId: getRoom().clientId });
-        }
+    playerData[playerNum] = { 
+        name: '', 
+        avatar: null, // Reset avatar as well
+        team: null, 
+        draftedPlayers: [], 
+        rosterSlots: {
+            QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null
+        },
+        isSetupStarted: false // Reset this flag on full reset
+    };
+    
+    localStorage.removeItem(`fantasyTeam_${playerNum}`);
+    
+    const otherPlayerNum = playerNum === 1 ? 2 : 1;
 
-    } else {
-        playerData[playerNum] = { 
-            name: '', 
-            avatar: null, // Reset avatar as well
-            team: null, 
-            draftedPlayers: [], 
-            rosterSlots: {
-                QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null
-            },
-            isSetupStarted: false // Reset this flag on full reset
-        };
-        
-        localStorage.removeItem(`fantasyTeam_${playerNum}`);
-        
-        const otherPlayerNum = playerNum === 1 ? 2 : 1;
-
-        // If both players are reset, also reset the shared game state
-        if (!playerData[1].name && !playerData[2].name) {
-            resetGameState();
-        } else if (playerData[otherPlayerNum].name) {
-            // If the other player is still in the game, make it their turn.
-            // This ensures focus shifts correctly when one player resets.
-            gameState.currentPlayer = otherPlayerNum;
-        }
+    // If both players are reset, also reset the shared game state
+    if (!playerData[1].name && !playerData[2].name) {
+        resetGameState();
+    } else if (playerData[otherPlayerNum].name) {
+        // If the other player is still in the game, make it their turn.
+        // This ensures focus shifts correctly when one player resets.
+        gameState.currentPlayer = otherPlayerNum;
     }
     
     // Clear input values
@@ -556,13 +436,4 @@ export function resetPlayer(playerNum) {
     
     // Reset player title to default "Player X" and remove avatar
     updateLayout();
-}
-
-/**
- * Gets a random element from an array.
- * @param {Array} array - The array to get a random element from.
- * @returns {object} A random element from the array.
- */
-function getRandomElement(array) {
-    return array[Math.floor(Math.random() * array.length)];
 }

@@ -75,8 +75,6 @@ body {
     justify-content: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    margin-top: 1rem;
-    margin-bottom: 1rem;
 }
 #share-link-input {
     flex-grow: 1;
@@ -105,8 +103,7 @@ body {
     margin-top: 1rem;
     font-weight: bold;
     font-size: 1.2rem;
-    color: #f59e0b; /* Start with a 'waiting' color */
-    transition: color 0.3s ease;
+    color: #10b981;
 }
 
 .players-container {
@@ -1139,20 +1136,20 @@ body {
     box-shadow: 0 15px 30px rgba(174, 32, 18, 0.5);
 }
 
-.landing-button.play-locally-btn {
-    background: linear-gradient(135deg, #AE2012, #8B0000); /* Red gradient matching logo */
-}
-
-.landing-button.play-locally-btn:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(174, 32, 18, 0.5);
-}
-
 .landing-button.view-stats-btn {
     background: linear-gradient(135deg, #1F3F6D, #0A2240); /* Dark blue gradient matching logo banner */
 }
 
 .landing-button.view-stats-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(31, 63, 109, 0.5);
+}
+
+.landing-button.play-friends-btn {
+    background: linear-gradient(135deg, #1F3F6D, #0A2240);
+}
+
+.landing-button.play-friends-btn:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(31, 63, 109, 0.5);
 }

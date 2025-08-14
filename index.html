@@ -3,7 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy Slots - Home</title>
-    <link rel="stylesheet" href="landing.css">
+    <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="landing-page-body">
@@ -13,6 +13,16 @@
                 <img src="https://i.postimg.cc/HLVXjSLh/output-onlinepngtools.png" alt="NFL Fantasy Slots Logo" class="site-logo">
             </a>
             <p class="subtitle">A randomly generated 1v1 fantasy experience.</p>
+            
+            <!-- NEW: Multiplayer Info Box -->
+            <div id="multiplayer-info-box" style="display: none;">
+                <p>Share this link with a friend to play together:</p>
+                <div id="share-link-container">
+                    <input type="text" id="share-link-input" readonly>
+                    <button id="copy-link-btn">Copy Link</button>
+                </div>
+                <div id="game-status-text" class="game-status-text"></div>
+            </div>
         </header>
 
         <main class="landing-page-main">
@@ -28,11 +38,11 @@
             </div>
             <div id="game-mode-selection" class="landing-options" style="display: none;">
                 <a href="game.html" class="landing-button play-locally-btn">
-                    <span>🧑‍💻 Play Locally</span>
+                    <span>Play Locally</span>
                     <div class="btn-shimmer"></div>
                 </a>
                 <a href="game.html?mode=multiplayer" class="landing-button play-friends-btn">
-                    <span>🤝 Play with Friends</span>
+                    <span>Play with Friends</span>
                     <div class="btn-shimmer"></div>
                 </a>
                 <button id="back-to-main-btn" class="back-button">Back</button>
@@ -45,7 +55,27 @@
             const gameModeSelection = document.getElementById('game-mode-selection');
             const backToMainBtn = document.getElementById('back-to-main-btn');
             const initialOptions = document.getElementById('initial-landing-options');
-
+            
+            // NEW: Multiplayer functionality
+            const multiplayerInfo = document.getElementById('multiplayer-info-box');
+            const shareLinkInput = document.getElementById('share-link-input');
+            const copyBtn = document.getElementById('copy-link-btn');
+            const gameStatusText = document.getElementById('game-status-text');
+            
+            let multiplayerRoom = null;
+            
+            // Check URL for multiplayer mode
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            
+            if (mode === 'multiplayer') {
+                multiplayerInfo.style.display = 'block';
+                multiplayerRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
+                const shareUrl = `${window.location.origin}${window.location.pathname}?room=${multiplayerRoom}`;
+                shareLinkInput.value = shareUrl;
+                gameStatusText.textContent = 'Waiting for Player 2...';
+            }
+            
             playSlotsBtn.addEventListener('click', () => {
                 initialOptions.style.display = 'none';
                 gameModeSelection.style.display = 'flex';
@@ -54,6 +84,21 @@
             backToMainBtn.addEventListener('click', () => {
                 gameModeSelection.style.display = 'none';
                 initialOptions.style.display = 'flex';
+            });
+            
+            // Copy link functionality
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(shareLinkInput.value);
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copy Link';
+                    }, 2000);
+                } catch (err) {
+                    shareLinkInput.select();
+                    document.execCommand('copy');
+                    copyBtn.textContent = 'Copied!';
+                }
             });
         });
     </script>

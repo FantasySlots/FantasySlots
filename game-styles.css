@@ -83,6 +83,17 @@
     filter: invert(1);
 }
 
+/* NEW: Style for the "ready" message */
+.player-ready-message {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #10b981; /* green color */
+    padding: 3rem 0; /* some vertical padding */
+    display: none; /* hidden by default */
+    animation: fadeIn 0.5s ease-in-out;
+}
+
 
 /* --- NAME INPUT & AVATAR --- */
 .name-input-container {

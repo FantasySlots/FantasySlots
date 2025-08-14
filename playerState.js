@@ -6,8 +6,8 @@
 
 // NEW: Centralized game state for turn management and game phase
 export const gameState = {
-    currentPlayer: 1, // Default to 1, will be overwritten by multiplayer state
-    phase: 'NAME_ENTRY', // Default, will be overwritten by multiplayer state
+    currentPlayer: 1,
+    phase: 'NAME_ENTRY', // Can be 'NAME_ENTRY', 'DRAFTING', 'COMPLETE'
 };
 
 export const playerData = {

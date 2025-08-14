@@ -1,21 +1,31 @@
 document.addEventListener('DOMContentLoaded', () => {
     const playSlotsBtn = document.getElementById('play-slots-btn');
-    const gameModeSelection = document.getElementById('game-mode-selection');
-    const backToMainBtn = document.getElementById('back-to-main-btn');
-    const initialOptions = document.getElementById('initial-landing-options');
+    const playModeModal = document.getElementById('play-mode-modal');
+    const closeModalBtn = document.querySelector('.close-play-mode-modal');
+    const playWithFriendsBtn = document.getElementById('play-with-friends-btn');
 
-    if (playSlotsBtn) {
+    if (playSlotsBtn && playModeModal) {
         playSlotsBtn.addEventListener('click', () => {
-            initialOptions.style.display = 'none';
-            gameModeSelection.style.display = 'flex';
+            playModeModal.style.display = 'flex';
         });
     }
 
-    if (backToMainBtn) {
-        backToMainBtn.addEventListener('click', () => {
-            gameModeSelection.style.display = 'none';
-            initialOptions.style.display = 'flex';
+    if (closeModalBtn && playModeModal) {
+        closeModalBtn.addEventListener('click', () => {
+            playModeModal.style.display = 'none';
         });
     }
+
+    if (playWithFriendsBtn) {
+        playWithFriendsBtn.addEventListener('click', () => {
+            alert('"Play with Friends" is coming soon!');
+        });
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target === playModeModal) {
+            playModeModal.style.display = 'none';
+        }
+    });
 });
 

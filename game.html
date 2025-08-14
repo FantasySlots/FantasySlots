@@ -16,17 +16,9 @@
             </a>
             <p class="subtitle">A randomly generated 1v1 fantasy experience.</p>
         </header>
- 
-        <!-- NEW: Multiplayer Info Box -->
-        <div id="multiplayer-info-box" style="display: none;">
-            <p><strong>You are in a multiplayer match!</strong></p>
-            <p>Share this link with a friend to play:</p>
-            <div id="share-link-container">
-                <input type="text" id="share-link-input" readonly>
-                <button id="copy-link-btn">Copy</button>
-            </div>
-            <p class="game-status-text" id="game-status-text">Waiting for opponent to join...</p>
-        </div>
+
+        <!-- New: Add Player 2 Button - Moved to the top -->
+        <button class="add-player2-btn" id="add-player2-btn" style="display: none;">Add Player 2</button>
 
         <div class="players-container">
             <!-- Player 1 Section -->
@@ -51,6 +43,8 @@
                     </div>
                     <button class="confirm-name-btn" id="player1-name-confirm-btn">Confirm</button>
                 </div>
+                
+                <div class="player-ready-message" id="player1-ready-message" style="display: none;"></div>
                 
                 <div class="team-display" id="player1-display" style="display: none;">
                     <div class="team-info">
@@ -106,6 +100,8 @@
                     <button class="confirm-name-btn" id="player2-name-confirm-btn">Confirm</button>
                 </div>
                 
+                <div class="player-ready-message" id="player2-ready-message" style="display: none;"></div>
+
                 <div class="team-display" id="player2-display" style="display: none;">
                     <div class="team-info">
                         <img class="team-logo" id="player2-logo" src="" alt="">
@@ -183,7 +179,6 @@
     <script type="module" src="uiAnimations.js"></script>
     <script type="module" src="playerState.js"></script>
     <script type="module" src="utils.js"></script>
-    <script type="module" src="multiplayer.js"></script>
     <script type="module" src="playerActions.js"></script>
     <script type="module" src="gameFlow.js"></script>
     <script type="module" src="game.js"></script>
