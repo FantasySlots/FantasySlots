@@ -1,0 +1,1293 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #010E2D 0%, #0A1128 100%); /* Darker, deeper navy background */
+    color: #E0E6EF; /* Off-white/light blue for general text */
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.app-container {
+    max-width: 1600px; /* Increased max-width to allow rosters to be wider */
+    margin: 0 auto;
+    padding: 2.5rem 2rem; /* Adjusted from 4rem 2rem to reduce top margin */
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 2rem; /* Adjusted from 3rem to reduce space below header */
+    animation: fadeInDown 0.8s ease-out;
+}
+
+/* NEW: Styles for the site logo */
+.site-logo {
+    max-width: 400px; /* Adjust as needed */
+    width: 100%;
+    height: auto;
+    margin-bottom: 1rem; /* Space between logo and subtitle */
+    animation: fadeIn 0.8s ease-out;
+}
+
+.title {
+    /* This rule is effectively replaced by .site-logo for the main title visual */
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #10b981, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    color: #8A9BBF; /* Muted blue-grey */
+    font-weight: 500;
+    margin-bottom: 1.5rem; /* Added margin for spacing */
+}
+
+/* NEW: Multiplayer Info Box */
+#multiplayer-info-box {
+    background: rgba(10, 17, 40, 0.95);
+    border: 1px solid rgba(138, 155, 191, 0.2);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    margin: 0 auto 2rem auto;
+    max-width: 800px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+#multiplayer-info-box p {
+    margin-bottom: 0.5rem;
+}
+#multiplayer-info-box strong {
+    color: #AE2012;
+    font-size: 1.2rem;
+}
+#share-link-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+#share-link-input {
+    flex-grow: 1;
+    max-width: 400px;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(138, 155, 191, 0.3);
+    border-radius: 0.5rem;
+    color: #E0E6EF;
+    text-align: center;
+}
+#copy-link-btn {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #1F3F6D, #0A2240);
+    border: none;
+    border-radius: 0.5rem;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+#copy-link-btn:hover {
+    transform: translateY(-1px);
+}
+.game-status-text {
+    margin-top: 1rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #10b981;
+}
+
+.players-container {
+    gap: 3rem;
+    position: relative;
+    display: grid; /* Always a grid, but columns vary */
+    grid-template-columns: 1fr 1fr; /* Default for two-player view or initial name entry */
+}
+
+/* New: Single-player view */
+.players-container.single-player-view {
+    grid-template-columns: 1fr;
+    justify-content: center;
+    display: flex; /* Change to flex to allow column direction and centering */
+    flex-direction: column;
+    align-items: center; /* Center horizontally */
+}
+
+.players-container.single-player-view .player-section {
+    max-width: 1200px; /* Increased from 900px to allow more space for 4 columns */
+    width: 100%; /* Make it fill container up to max-width */
+}
+
+/* New: Two-player view (explicitly set, though it's the default above) */
+.players-container.two-player-view {
+    grid-template-columns: 1fr 1fr;
+    display: grid; /* Ensure it's a grid here */
+}
+
+.player-section {
+    background: rgba(10, 17, 40, 0.95); /* Darker navy background for sections */
+    border: 1px solid rgba(138, 155, 191, 0.2); /* Subtle blue-grey border */
+    border-radius: 1.5rem;
+    padding: 3rem; /* Increased padding */
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); /* Default shadow for elevation */
+}
+
+.player-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); /* Stronger shadow on hover */
+}
+
+/* NEW: Styles for the player section header row */
+.player-header {
+    display: flex;
+    justify-content: flex-start; /* Changed from space-between to flex-start to place button next to title */
+    align-items: center;
+    margin-bottom: 1.5rem; /* This creates space between the header and the content below */
+    gap: 1rem; /* Added gap to space out the title and the reset button */
+}
+
+.player-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #E0E6EF; /* Off-white/light blue */
+    display: flex; /* Allow avatar and text to sit next to each other */
+    align-items: center;
+    gap: 0.75rem; /* Space between avatar and text */
+}
+
+/* New: Styles for the player avatar in the title */
+.player-title .player-avatar-img {
+    width: 50px; /* Made bigger */
+    height: 50px; /* Made bigger */
+    object-fit: contain; /* Use contain for SVGs */
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    padding: 5px;
+    filter: invert(1); /* ADDED: Filter to make SVGs white */
+}
+
+.name-input-container {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    align-items: center; /* Align items vertically */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.name-input {
+    flex: 1;
+    min-width: 150px; /* Ensure input doesn't get too small */
+    padding: 0.875rem 1.25rem;
+    background: rgba(10, 17, 40, 0.8); /* Darker input background */
+    border: 1px solid rgba(138, 155, 191, 0.3); /* Subtle blue-grey border */
+    border-radius: 0.75rem;
+    color: #E0E6EF; /* Off-white/light blue text */
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: #AE2012; /* Red highlight on focus */
+    box-shadow: 0 0 0 3px rgba(174, 32, 18, 0.1);
+}
+
+/* New: Avatar Selection Trigger Styles */
+.avatar-selection-area {
+    position: relative;
+    flex-shrink: 0; /* Don't shrink to zero width */
+    margin: 0.5rem 0; /* Add some margin for responsiveness */
+}
+
+.selected-avatar-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(138, 155, 191, 0.3); /* Subtle blue-grey border */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.selected-avatar-preview:hover {
+    border-color: #AE2012; /* Red highlight on hover */
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.selected-avatar-preview .player-avatar-img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    filter: invert(1); /* ADDED: Filter to make SVGs white */
+}
+
+.selected-avatar-preview .avatar-placeholder {
+    color: #8A9BBF; /* Muted blue-grey */
+    font-size: 0.75rem;
+    text-align: center;
+    line-height: 1.2;
+    padding: 5px;
+}
+
+/* New: Avatar Selection Modal Styles */
+.avatar-selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    z-index: 3000; /* Higher than slot selection but lower than stats */
+    padding: 2rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.avatar-selection-modal-content {
+    background: rgba(10, 17, 40, 0.98); /* Darker navy background */
+    border: 1px solid rgba(138, 155, 191, 0.3); /* Subtle blue-grey border */
+    border-radius: 1.5rem;
+    max-width: 600px;
+    max-height: 80vh;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    padding: 2.5rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6); /* Stronger shadow */
+    transform: scale(0.9);
+    animation: bounceIn 0.3s forwards;
+    backdrop-filter: blur(12px); /* Slightly increased blur */
+}
+
+.avatar-selection-modal-content .close-avatar-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #8A9BBF; /* Muted blue-grey */
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.avatar-selection-modal-content .close-avatar-modal:hover {
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+.avatar-selection-modal-content .modal-title {
+    font-size: 2rem;
+    color: #E0E6EF; /* Off-white/light blue */
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 700;
+}
+
+.avatar-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* Adjust column size */
+    gap: 1rem; /* Space between avatars */
+    justify-items: center;
+}
+
+.avatar-option {
+    width: 60px; /* Made options slightly larger */
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-option:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: #AE2012; /* Red highlight on hover */
+}
+
+.avatar-option.selected {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.5);
+}
+
+.avatar-option img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    filter: invert(1); /* ADDED: Filter to make SVGs white */
+}
+
+.confirm-name-btn {
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #AE2012, #8B0000); /* Red gradient matching logo */
+    border: none;
+    border-radius: 0.75rem;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap; /* Prevent text from wrapping */
+    flex-shrink: 0; /* Don't shrink */
+}
+
+.confirm-name-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(174, 32, 18, 0.3);
+}
+
+/* Ensure team-selection is visible after name confirmed */
+.team-selection {
+    display: flex; /* Changed from block to flex */
+    gap: 1rem; /* Space between buttons */
+    margin-top: 1.5rem; /* Space below team info */
+    margin-bottom: 1.5rem; /* Space above player content area */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    justify-content: center; /* Center buttons if they wrap or there's extra space */
+}
+
+.select-team-btn,
+.auto-draft-btn {
+    position: relative;
+    flex: 1; /* Allow buttons to grow and shrink */
+    min-width: 250px; /* Ensure they don't get too small */
+    padding: 1.25rem;
+    border: none;
+    border-radius: 1rem;
+    color: #ffffff;
+    font-size: 1.125rem;
+    font-weight: 600;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-top: 0; /* Removed explicit margin-top */
+}
+
+.select-team-btn {
+    background: linear-gradient(135deg, #AE2012, #8B0000); /* Red gradient matching logo */
+}
+
+.select-team-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(174, 32, 18, 0.4);
+}
+
+.auto-draft-btn {
+    background: linear-gradient(135deg, #1F3F6D, #0A2240); /* Dark blue gradient matching logo banner */
+}
+
+.auto-draft-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(31, 63, 109, 0.4);
+}
+
+.btn-shimmer {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.select-team-btn:hover .btn-shimmer,
+.auto-draft-btn:hover .btn-shimmer {
+    left: 100%;
+}
+
+.team-display {
+    text-align: center;
+}
+
+.team-info {
+    margin-bottom: 1.5rem;
+}
+
+.team-logo {
+    width: 150px; /* Made bigger */
+    height: 150px; /* Made bigger */
+    margin-bottom: 1rem;
+    animation: bounceIn 0.6s ease-out;
+    /* NEW: For displaying avatars, and better consistency for team logos */
+    border-radius: 50%; /* Make it round for avatars */
+    object-fit: contain; /* Ensure image fits within bounds without cropping */
+    background-color: #1f2937; /* Consistent background behind logo/avatar */
+    padding: 5px; /* Small padding inside the circular border */
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+}
+
+/* ADDED: Filter to make team-logo white ONLY when it's an avatar */
+.team-logo.is-avatar {
+    filter: invert(1); 
+}
+
+.team-animation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.team-animation-overlay .animation-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+.animation-container {
+    text-align: center;
+}
+
+.cycling-logo {
+    width: 200px;
+    height: 200px;
+    margin-bottom: 1.5rem;
+    animation: pulse 0.3s ease-in-out infinite;
+    /* Styles for "circle frame and all" applied directly */
+    border-radius: 50%; 
+    object-fit: contain;
+    background-color: #1f2937;
+    padding: 5px;
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Subtle border */
+}
+
+/* Add filter for avatar mode to cycling-logo as well */
+.cycling-logo.is-avatar {
+    filter: invert(1);
+}
+
+.animation-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+.roster-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 2rem;
+}
+
+.roster-content {
+    background: rgba(10, 17, 40, 0.98); /* Darker navy background */
+    border: 1px solid rgba(138, 155, 191, 0.3); /* Subtle blue-grey border */
+    border-radius: 1.5rem;
+    max-width: 950px;
+    max-height: 80vh;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    padding: 2rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6); /* Stronger shadow */
+    transform: scale(0.9);
+    animation: bounceIn 0.3s forwards;
+    backdrop-filter: blur(12px); /* Slightly increased blur */
+}
+
+.close-roster {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #8A9BBF; /* Muted blue-grey */
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-roster:hover {
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+.roster-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    border-bottom: 1px solid rgba(138, 155, 191, 0.2); /* Subtle blue-grey border */
+}
+
+.modal-team-logo {
+    width: 60px;
+    height: 60px;
+}
+
+.roster-container {
+    padding: 2rem;
+}
+
+.position-group {
+    margin-bottom: 2rem;
+}
+
+.position-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #AE2012; /* Red for section titles */
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(174, 32, 18, 0.3); /* Red border */
+}
+
+.player-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    background: rgba(26, 35, 49, 0.5); /* Slightly lighter background for cards */
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.player-card:hover {
+    background: rgba(26, 35, 49, 0.8);
+    transform: translateX(5px);
+}
+
+/* New style for fantasy roster player cards when they are clickable for stats */
+.player-card--clickable-stats {
+    border: 1px solid rgba(174, 32, 18, 0.5); /* Red border to indicate clickability */
+    box-shadow: 0 0 8px rgba(174, 32, 18, 0.4);
+}
+
+.player-card--clickable-stats:hover {
+    background: rgba(26, 35, 49, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(174, 32, 18, 0.7);
+}
+
+.player-name {
+    font-weight: 600;
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+.player-position {
+    color: #8A9BBF; /* Muted blue-grey */
+    font-size: 0.875rem;
+}
+
+/* New container for dynamic content */
+.player-content-area {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(138, 155, 191, 0.2); /* Subtle blue-grey border */
+}
+
+.inline-roster {
+    /* Styles for the NFL roster (draftable players) */
+    /* This section is now managed within .player-content-area */
+    display: none; /* Controlled by JS toggle */
+}
+
+.inline-roster h4 {
+    margin-bottom: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #AE2012; /* Red for sub-section titles */
+}
+
+.inline-roster > div > div {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Changed to 4 columns */
+    gap: 1rem;
+}
+
+/* Base styles for all player draft cards */
+.player-draft-card {
+    padding: 1.25rem;
+    background: rgba(26, 35, 49, 0.3); /* Slightly lighter background for cards */
+    border-radius: 1rem;
+    border: 1px solid transparent;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Hover effect for any player card that is not explicitly disabled */
+.player-draft-card:hover:not(.player-draft-card--disabled) {
+    background: rgba(26, 35, 49, 0.4); /* Slightly lighter on hover */
+}
+
+/* Styles for available player cards (highlighted) */
+.player-draft-card--available {
+    background: rgba(174, 32, 18, 0.2); /* Red highlight */
+    border-color: #AE2012; /* Red border */
+    box-shadow: 0 0 15px rgba(174, 32, 18, 0.6);
+}
+
+.player-draft-card--available:hover {
+    transform: none;
+    box-shadow: 0 0 15px rgba(174, 32, 18, 0.6); /* Keep the red glow */
+}
+
+/* Styles for drafted player cards (green) */
+.player-draft-card--drafted {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Styles for disabled player cards (grey, roster full / slot full) */
+.player-draft-card--disabled {
+    background: rgba(138, 155, 191, 0.1); /* Muted blue-grey */
+    border-color: rgba(138, 155, 191, 0.3);
+    cursor: not-allowed;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Action text colors based on card state */
+.player-draft-card .draft-action-text {
+    color: #10b981;
+    cursor: pointer; /* Ensure the text itself has a pointer */
+    padding: 0.5rem 1rem; /* Add padding to make it a larger clickable area */
+    border-radius: 0.5rem; /* Rounded corners for the clickable area */
+    background-color: rgba(16, 185, 129, 0.1); /* Subtle background for the button */
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+/* Hover effect specifically for the "Draft" text when available */
+.player-draft-card--available .draft-action-text:hover {
+    background-color: rgba(16, 185, 129, 0.3); /* Darker background on hover */
+    transform: scale(1.05); /* Slightly scale up the text on hover */
+}
+
+.player-draft-card--drafted .draft-action-text {
+    color: #10b981;
+    cursor: not-allowed; /* No pointer for drafted */
+    background-color: transparent; /* No background */
+    transform: none; /* No transform */
+}
+
+.player-draft-card--disabled .draft-action-text {
+    color: #8A9BBF; /* Muted blue-grey */
+    cursor: not-allowed; /* No pointer for disabled */
+    background-color: transparent; /* No background */
+    transform: none; /* No transform */
+}
+
+/* Player photos in draft cards */
+.player-photo {
+    width: 80px; /* Increased from 60px */
+    height: 80px; /* Increased from 60px */
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #1f2937;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* New classes for player card internal structure */
+.player-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.player-name-text {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+.player-meta-text {
+    color: #8A9BBF; /* Muted blue-grey */
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fantasy-roster {
+    padding: 1.5rem;
+    background: rgba(10, 17, 40, 0.5); /* Darker navy background */
+    border-radius: 1rem;
+    border: 1px solid rgba(138, 155, 191, 0.2); /* Subtle blue-grey border */
+    display: none; /* Controlled by JS toggle */
+}
+
+/* Styles for individual fantasy roster slots */
+.fantasy-roster-slot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .5rem .5rem; /* Increased vertical padding from 1rem */
+    margin-bottom: 0.75rem; /* Slightly more space between slots */
+    background: rgba(26, 35, 49, 0.4); /* Slightly darker background */
+    border-radius: 0.75rem; /* Slightly larger border-radius */
+    border: 1px solid rgba(138, 155, 191, 0.2); /* Add a subtle border */
+    transition: all 0.3s ease;
+    min-height: 100px; /* Make them slightly taller */
+}
+
+.fantasy-roster-slot:hover {
+    background: rgba(26, 35, 49, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.fantasy-roster-slot .slot-left-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* Increased gap */
+}
+
+.fantasy-roster-slot .slot-label {
+    font-size: 1.1rem; /* Slightly larger */
+    font-weight: 700; /* Bolder */
+    color: #8A9BBF; /* Muted blue-grey */
+    min-width: 45px; /* Give it a fixed width to align labels */
+}
+
+/* Player photos in fantasy roster */
+.player-photo-fantasy {
+    width: 80px; /* Increased from 50px */
+    height: 80px; /* Increased from 50px */
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #1f2937;
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Slightly thicker border */
+}
+
+.fantasy-roster-slot .player-name-fantasy {
+    font-size: 1.15rem; /* Slightly larger */
+    font-weight: 600;
+    color: #E0E6EF; /* Off-white/light blue */
+    flex-grow: 1; /* Allow it to take up available space */
+}
+
+.fantasy-roster-slot .slot-right-content {
+    text-align: right;
+}
+
+.fantasy-roster-slot .points-display {
+    font-size: 1.15rem; /* Slightly larger */
+    font-weight: 700;
+}
+
+.reset-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: 0.5rem;
+    color: #ef4444; /* Keep for general styling, though icon overrides visual color */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex; /* Make the button a flex container */
+    align-items: center; /* Center icon vertically */
+    justify-content: center; /* Center icon horizontally */
+}
+
+.reset-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: scale(1.05);
+}
+
+/* New style for the reset icon */
+.reset-btn img {
+    width: 24px; /* Set desired size for the icon */
+    height: 24px;
+    /* This filter converts the black SVG icon to the red color #ef4444 */
+    filter: invert(49%) sepia(85%) saturate(3062%) hue-rotate(338deg) brightness(101%) contrast(92%);
+}
+
+/* Slot Selection Modal Styles */
+.slot-selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    animation: fadeIn 0.3s ease;
+}
+
+.slot-selection-content {
+    background: rgba(10, 17, 40, 0.98); /* Darker navy background */
+    border: 1px solid rgba(138, 155, 191, 0.3); /* Subtle blue-grey border */
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6); /* Stronger shadow */
+    transform: scale(0.9);
+    animation: bounceIn 0.3s forwards;
+    backdrop-filter: blur(12px); /* Slightly increased blur */
+}
+
+.slot-selection-content h3 {
+    font-size: 1.8rem;
+    color: #E0E6EF; /* Off-white/light blue */
+    margin-bottom: 1rem;
+}
+
+.slot-selection-content p {
+    color: #8A9BBF; /* Muted blue-grey */
+    margin-bottom: 1.5rem;
+}
+
+.slot-options {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.slot-option-btn {
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #AE2012, #8B0000); /* Red gradient matching logo */
+    border: none;
+    border-radius: 0.75rem;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-grow: 1;
+    min-width: 120px;
+}
+
+.slot-option-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(174, 32, 18, 0.3);
+}
+
+.slot-option-btn.disabled {
+    background: rgba(138, 155, 191, 0.3); /* Muted blue-grey */
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.cancel-slot-selection {
+    padding: 0.6rem 1.2rem;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    border-radius: 0.5rem;
+    color: #ef4444;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cancel-slot-selection:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: scale(1.05);
+}
+
+/* NEW: Style for the total fantasy points */
+.total-fantasy-points {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(138, 155, 191, 0.2); /* Subtle blue-grey border */
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #8A9BBF; /* Muted blue-grey */
+    text-align: right;
+}
+
+.total-fantasy-points span {
+    font-size: 1.25rem;
+    color: #10b981; /* Change to green for the points value */
+    font-weight: 700; /* Make the value bold */
+}
+
+/* Player Stats Modal Styles */
+.player-stats-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    z-index: 4000; /* Higher than other modals */
+    padding: 2rem;
+}
+
+.player-stats-content {
+    background: rgba(10, 17, 40, 0.98); /* Darker navy background */
+    border: 1px solid rgba(138, 155, 191, 0.3); /* Subtle blue-grey border */
+    border-radius: 1.5rem;
+    max-width: 800px;
+    max-height: 90vh;
+    width: 100%;
+    overflow-y: auto;
+    position: relative;
+    padding: 2rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6); /* Stronger shadow */
+    transform: scale(0.9);
+    animation: bounceIn 0.3s forwards;
+    backdrop-filter: blur(12px); /* Slightly increased blur */
+}
+
+.player-stats-content .close-stats {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #8A9BBF; /* Muted blue-grey */
+    font-size: 2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.player-stats-content .close-stats:hover {
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+.player-stats-content h2 {
+    font-size: 2rem;
+    color: #E0E6EF; /* Off-white/light blue */
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.player-stats-content p {
+    font-size: 1rem;
+    color: #C9D7E7; /* Slightly lighter off-white */
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.player-stats-content strong {
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+/* Add Player 2 Button */
+.add-player2-btn {
+    width: fit-content;
+    margin: 2rem auto; /* Center the button and give vertical space */
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #1F3F6D, #0A2240); /* Dark blue gradient */
+    border: none;
+    border-radius: 1rem;
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(31, 63, 109, 0.3);
+}
+
+.add-player2-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(31, 63, 109, 0.5);
+}
+
+/* Ensure spacing in two-player view if the button isn't shown */
+.players-container.two-player-view .add-player2-btn {
+    display: none; /* Hide button when both players are visible */
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Styles specific to the landing page */
+.landing-page-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem; /* Ensure some padding for smaller screens */
+    text-align: center;
+}
+
+.landing-page-container {
+    max-width: 800px; /* Adjust max-width for the landing page */
+    padding: 2.5rem 2rem; /* Adjusted from 4rem 2rem to reduce top margin */
+    background: rgba(10, 17, 40, 0.95); /* Darker navy background */
+    border: 1px solid rgba(138, 155, 191, 0.3); /* Subtle blue-grey border */
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.8s ease-out; /* Apply a fade-in animation */
+}
+
+.landing-page-main {
+    margin-top: 3rem;
+}
+
+.landing-options {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically by default */
+    gap: 1.5rem; /* Space between buttons */
+    justify-content: center;
+    align-items: center; /* Center buttons horizontally */
+}
+
+.landing-button {
+    position: relative;
+    display: flex; /* Use flex to center content */
+    align-items: center;
+    justify-content: center;
+    width: 100%; /* Take full width of its container */
+    max-width: 350px; /* Limit width for larger screens */
+    padding: 1.5rem 2.5rem; /* Larger padding for prominent buttons */
+    border: none;
+    border-radius: 1.25rem; /* Slightly larger border-radius */
+    color: #ffffff;
+    font-size: 1.5rem; /* Larger font size */
+    font-weight: 700;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    text-decoration: none; /* Remove underline for links */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.landing-button.play-slots-btn {
+    background: linear-gradient(135deg, #AE2012, #8B0000); /* Red gradient matching logo */
+}
+
+.landing-button.play-slots-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(174, 32, 18, 0.5);
+}
+
+.landing-button.view-stats-btn {
+    background: linear-gradient(135deg, #1F3F6D, #0A2240); /* Dark blue gradient matching logo banner */
+}
+
+.landing-button.view-stats-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(31, 63, 109, 0.5);
+}
+
+.landing-button.play-friends-btn {
+    background: linear-gradient(135deg, #1F3F6D, #0A2240);
+}
+
+.landing-button.play-friends-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(31, 63, 109, 0.5);
+}
+
+/* Reapply shimmer effect for landing page buttons */
+.landing-button .btn-shimmer {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.landing-button:hover .btn-shimmer {
+    left: 100%;
+}
+
+/* NEW: Back button for landing page */
+.back-button {
+    background: none;
+    border: 1px solid #8A9BBF;
+    color: #8A9BBF;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.back-button:hover {
+    background: rgba(138, 155, 191, 0.2);
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
+@media (max-width: 768px) {
+    .players-container,
+    .players-container.single-player-view,
+    .players-container.two-player-view { /* Apply to all states on small screens */
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    /* Ensure both sections are visible on small screens to avoid confusion */
+    .player-section {
+        display: block !important;
+    }
+    
+    .site-logo {
+        max-width: 300px; /* Smaller logo on small screens */
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .player-section {
+        padding: 1.5rem;
+    }
+
+    .player-stats-content h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Player selection cards inside inline roster on small screens */
+    .inline-roster > div > div {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on small screens */
+    }
+
+    .team-selection {
+        flex-direction: column; /* Stack buttons vertically on small screens */
+    }
+
+    .select-team-btn,
+    .auto-draft-btn {
+        min-width: unset; /* Remove min-width for stacking */
+        width: 100%;
+    }
+    .auto-draft-btn {
+        margin-top: 1rem; /* Re-add margin when stacked */
+    }
+
+    .name-input-container {
+        flex-direction: column; /* Stack input, avatar, button vertically */
+        align-items: stretch; /* Stretch items to fill width */
+    }
+
+    .name-input,
+    .confirm-name-btn {
+        width: 100%;
+        margin-bottom: 0.75rem; /* Space between stacked items */
+    }
+    
+    .avatar-selection-area {
+        width: 100%; /* Take full width */
+        text-align: center; /* Center preview/options */
+        margin-bottom: 0.75rem;
+    }
+    
+    .selected-avatar-preview {
+        margin: 0 auto; /* Center the preview */
+    }
+    
+    /* Avatar modal content on smaller screens */
+    .avatar-selection-modal-content {
+        padding: 1.5rem;
+    }
+
+    .avatar-selection-modal-content .modal-title {
+        font-size: 1.5rem;
+    }
+
+    .avatar-options-grid {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); /* Smaller avatars on small screens */
+        gap: 0.75rem;
+    }
+
+    .avatar-option {
+        width: 50px;
+        height: 50px;
+    }
+
+    /* Landing page responsiveness */
+    .landing-page-container {
+        padding: 1.5rem 1rem; /* Adjusted from 2rem 1rem for smaller top margin */
+    }
+
+    .landing-button {
+        font-size: 1.2rem;
+        padding: 1rem 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Player selection cards inside inline roster on very small screens */
+    .inline-roster > div > div {
+        grid-template-columns: 1fr; /* 1 column on very small screens */
+    }
+}
