@@ -12,8 +12,10 @@ import { updateLayout } from './game.js';
 /**
  * Handles the process of selecting a random NFL team.
  * @param {number} playerNum - The player number (1 or 2).
+ * @param {boolean} isMultiplayer - Flag for multiplayer mode.
+ * @param {object} gameRef - Firebase reference.
  */
-export async function selectTeam(playerNum) {
+export async function selectTeam(playerNum, isMultiplayer, gameRef) {
     if (playerNum !== gameState.currentPlayer) {
         alert("It's not your turn!");
         return;
@@ -49,7 +51,27 @@ export async function selectTeam(playerNum) {
     setTimeout(async () => {
         clearInterval(animateInterval);
         const randomTeam = teams[Math.floor(Math.random() * teams.length)];
-        playerData[playerNum].team = randomTeam; 
+        
+        // Fetch roster data first
+        let rosterData = null;
+        try {
+            const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${randomTeam.id}/roster`);
+            const data = await response.json();
+            if (data.athletes) {
+                rosterData = data.athletes;
+            }
+        } catch (error) {
+            console.error('Error fetching roster:', error);
+        }
+
+        // Create a new team object with roster data
+        const newTeamData = {
+            ...randomTeam,
+            rosterData: rosterData
+        };
+        
+        // Update state
+        playerData[playerNum].team = newTeamData;
         
         showTeamAnimationOverlay(`Selected: ${randomTeam.name}`, randomTeam.logo, false); 
         
@@ -57,20 +79,12 @@ export async function selectTeam(playerNum) {
         setTimeout(async () => {
             hideTeamAnimationOverlay(); 
             
-            // Fetch roster and display draft interface
-            try {
-                const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${randomTeam.id}/roster`);
-                const data = await response.json();
-                
-                if (data.athletes) {
-                    playerData[playerNum].team.rosterData = data.athletes; 
-                    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum])); // Save state after team selection
-                }
-            } catch (error) {
-                console.error('Error fetching roster:', error);
+            if (isMultiplayer) {
+                await gameRef.child('playerData').set(playerData);
+            } else {
+                localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
+                updateLayout();
             }
-            // Update layout based on new team selection
-            updateLayout();
         }, 500);
     }, animationDuration);
 }
@@ -111,8 +125,10 @@ function findAvailableSlotForPlayer(playerNum, player) {
  * Handles the auto-drafting process for a player.
  * Now drafts a single random player from a random team.
  * @param {number} playerNum - The player number (1 or 2).
+ * @param {boolean} isMultiplayer - Flag for multiplayer mode.
+ * @param {object} gameRef - Firebase reference.
  */
-export async function autoDraft(playerNum) {
+export async function autoDraft(playerNum, isMultiplayer, gameRef) {
     if (playerNum !== gameState.currentPlayer) {
         alert("It's not your turn!");
         return;
@@ -255,18 +271,31 @@ export async function autoDraft(playerNum) {
                 playerData[playerNum].team = null;
                 playerData[playerNum].draftedPlayers = [];
 
-                localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
+                if (isMultiplayer) {
+                    await gameRef.child('playerData').set(playerData);
+                    // Also update turn
+                    const newGameState = switchTurn();
+                    await gameRef.child('gameState').set(newGameState);
+
+                } else {
+                    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
+                    // Update layout will switch turn locally
+                }
 
                 setTimeout(() => {
                     hideTeamAnimationOverlay();
-                    updateLayout(true); // Update layout and switch turns
+                    if (!isMultiplayer) {
+                        updateLayout(true);
+                    }
                 }, 1500); // Show drafted player for a bit
             } else {
                  showTeamAnimationOverlay(`No draftable player found! Try again.`);
                 setTimeout(() => {
                     hideTeamAnimationOverlay();
                     // Don't switch turns if failed
-                    updateLayout(false); 
+                     if (!isMultiplayer) {
+                        updateLayout(false);
+                     }
                 }, 1500);
             }
 
@@ -275,7 +304,9 @@ export async function autoDraft(playerNum) {
             showTeamAnimationOverlay('Auto-draft failed!');
             setTimeout(() => {
                 hideTeamAnimationOverlay();
-                updateLayout(false); // Do not switch turn on error
+                 if (!isMultiplayer) {
+                    updateLayout(false); // Do not switch turn on error
+                 }
             }, 1500);
         }
     }, animationDuration - 1500); // Start searching before visual animation ends
@@ -286,8 +317,10 @@ export async function autoDraft(playerNum) {
  * @param {number} playerNum - The player number (1 or 2).
  * @param {object} player - The NFL player object to draft.
  * @param {string} originalPosition - The player's original position (e.g., 'QB', 'RB', 'WR', 'TE', 'K', 'DEF').
+ * @param {boolean} isMultiplayer - Flag for multiplayer mode.
+ * @param {object} gameRef - Firebase reference.
  */
-export function draftPlayer(playerNum, player, originalPosition) {
+export function draftPlayer(playerNum, player, originalPosition, isMultiplayer, gameRef) {
     if (playerNum !== gameState.currentPlayer) {
         alert("It's not your turn!");
         return;
@@ -316,7 +349,7 @@ export function draftPlayer(playerNum, player, originalPosition) {
     const flexPositions = ['RB', 'WR', 'TE'];
 
     if (flexPositions.includes(originalPosition)) {
-        showSlotSelectionModal(player, playerNum, originalPosition, playerData[playerNum], assignPlayerToSlot, hideSlotSelectionModal);
+        showSlotSelectionModal(player, playerNum, originalPosition, playerData[playerNum], (pNum, pObj, sId) => assignPlayerToSlot(pNum, pObj, sId, isMultiplayer, gameRef), hideSlotSelectionModal);
     } else {
         let targetSlot;
         if (originalPosition === 'QB') targetSlot = 'QB';
@@ -324,7 +357,7 @@ export function draftPlayer(playerNum, player, originalPosition) {
         else if (originalPosition === 'DEF') targetSlot = 'DEF';
 
         if (targetSlot) {
-            assignPlayerToSlot(playerNum, player, targetSlot);
+            assignPlayerToSlot(playerNum, player, targetSlot, isMultiplayer, gameRef);
         } else {
             console.error(`Attempted to draft ${player.displayName} (${originalPosition}) to an unknown slot.`);
             alert(`Cannot draft ${player.displayName} to an unknown slot for position ${originalPosition}.`);
@@ -337,8 +370,10 @@ export function draftPlayer(playerNum, player, originalPosition) {
  * @param {number} playerNum - The player number (1 or 2).
  * @param {object} playerObj - The NFL player object to assign.
  * @param {string} slotId - The fantasy roster slot ID (e.g., 'QB', 'RB', 'WR1').
+ * @param {boolean} isMultiplayer - Flag for multiplayer mode.
+ * @param {object} gameRef - Firebase reference.
  */
-export function assignPlayerToSlot(playerNum, playerObj, slotId) {
+export async function assignPlayerToSlot(playerNum, playerObj, slotId, isMultiplayer, gameRef) {
     if (playerNum !== gameState.currentPlayer) {
         console.warn(`ASSIGNMENT BLOCKED: Not Player ${playerNum}'s turn.`);
         alert("It's not your turn!");
@@ -394,46 +429,15 @@ export function assignPlayerToSlot(playerNum, playerObj, slotId) {
 
     playerData[playerNum].draftedPlayers.push({ id: playerObj.id, assignedSlot: slotId });
 
-    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
-
     hideSlotSelectionModal();
-    
-    // Update layout to reflect the drafted player and switch turns
-    updateLayout(true); 
-}
 
-/**
- * Resets a player's fantasy data and UI.
- * @param {number} playerNum - The player number (1 or 2).
- */
-export function resetPlayer(playerNum) {
-    playerData[playerNum] = { 
-        name: '', 
-        avatar: null, // Reset avatar as well
-        team: null, 
-        draftedPlayers: [], 
-        rosterSlots: {
-            QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null
-        },
-        isSetupStarted: false // Reset this flag on full reset
-    };
-    
-    localStorage.removeItem(`fantasyTeam_${playerNum}`);
-    
-    const otherPlayerNum = playerNum === 1 ? 2 : 1;
-
-    // If both players are reset, also reset the shared game state
-    if (!playerData[1].name && !playerData[2].name) {
-        resetGameState();
-    } else if (playerData[otherPlayerNum].name) {
-        // If the other player is still in the game, make it their turn.
-        // This ensures focus shifts correctly when one player resets.
-        gameState.currentPlayer = otherPlayerNum;
+    if (isMultiplayer) {
+        await gameRef.child('playerData').set(playerData);
+        const newGameState = switchTurn();
+        await gameRef.child('gameState').set(newGameState);
+    } else {
+        localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
+        // Update layout to reflect the drafted player and switch turns
+        updateLayout(true); 
     }
-    
-    // Clear input values
-    document.getElementById(`player${playerNum}-name`).value = '';
-    
-    // Reset player title to default "Player X" and remove avatar
-    updateLayout();
 }

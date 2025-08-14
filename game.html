@@ -5,17 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy Slots</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="game-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
         <header class="header">
             <a href="index.html">
-                <img src="https://i.postimg.cc/HLVXjSLh/output-onlinepngtools.png" alt="NFL Fantasy Slots Logo" class="site-logo">
+                <img src="/ChatGPT Image Aug 13, 2025, 09_18_54 PM.png" alt="NFL Fantasy Slots Logo" class="site-logo">
             </a>
             <p class="subtitle">A randomly generated 1v1 fantasy experience.</p>
         </header>
+
+        <!-- New: Multiplayer Info Box -->
+        <div id="multiplayer-info-box" style="display: none;">
+            <p id="multiplayer-status-text">Waiting for opponent...</p>
+            <div id="share-link-container" style="display: none;">
+                <p>Share this link with a friend to play:</p>
+                <input type="text" id="share-link-input" readonly>
+                <button id="copy-link-btn">Copy Link</button>
+            </div>
+        </div>
 
         <!-- New: Add Player 2 Button - Moved to the top -->
         <button class="add-player2-btn" id="add-player2-btn" style="display: none;">Add Player 2</button>
@@ -174,6 +183,11 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script type="module" src="firebase.js"></script>
     <script type="module" src="uiRenderer.js"></script>
     <script type="module" src="uiModals.js"></script>
     <script type="module" src="uiAnimations.js"></script>

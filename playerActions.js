@@ -2,7 +2,7 @@
  * playerActions.js
  * Contains functions related to direct player actions like confirming names and selecting avatars.
  */
-import { playerData } from './playerState.js';
+import { playerData, gameState, resetGameState, getInitialPlayerData, setGameState } from './playerState.js';
 import { getRandomElement } from './utils.js';
 import { updateLayout } from './game.js';
 
@@ -41,19 +41,26 @@ export function updateAvatarPreview(playerNum, avatarUrl) {
  * Callback function to set player avatar.
  * @param {number} playerNum - The player number (1 or 2).
  * @param {string} avatarUrl - The URL of the selected avatar.
+ * @param {boolean} isMultiplayer - Flag for multiplayer mode.
+ * @param {object} gameRef - Firebase reference.
  */
-export function selectAvatar(playerNum, avatarUrl) {
+export function selectAvatar(playerNum, avatarUrl, isMultiplayer, gameRef) {
     playerData[playerNum].avatar = avatarUrl;
-    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
-    // The preview and title will be updated by updateLayout when it's called after selection/modal close.
-    updateLayout();
+    if (isMultiplayer) {
+        gameRef.child('playerData').child(playerNum).set(playerData[playerNum]);
+    } else {
+        localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
+        updateLayout();
+    }
 }
 
 /**
  * Handles the confirmation of a player's name.
  * @param {number} playerNum - The player number (1 or 2).
+ * @param {boolean} isMultiplayer - Flag for multiplayer mode.
+ * @param {object} gameRef - Firebase reference.
  */
-export function confirmName(playerNum) {
+export function confirmName(playerNum, isMultiplayer, gameRef) {
     const input = document.getElementById(`player${playerNum}-name`);
     const name = input.value.trim();
     
@@ -69,8 +76,56 @@ export function confirmName(playerNum) {
         playerData[playerNum].avatar = getRandomElement(AVATAR_SVGS);
     }
     
-    localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum])); // Save state after name confirmation
-    
-    // Update layout based on the new name confirmed state
-    updateLayout(false); // Pass false to prevent turn switch on name confirm
+    if(isMultiplayer) {
+        gameRef.child('playerData').child(playerNum).set(playerData[playerNum]);
+    } else {
+        localStorage.setItem(`fantasyTeam_${playerNum}`, JSON.stringify(playerData[playerNum]));
+        updateLayout(false); // Pass false to prevent turn switch on name confirm
+    }
+}
+
+/**
+ * Resets a player's fantasy data and UI.
+ * @param {number} playerNum - The player number (1 or 2).
+ * @param {boolean} isMultiplayer - Flag for multiplayer mode.
+ * @param {object} gameRef - Firebase reference.
+ */
+export function resetPlayer(playerNum, isMultiplayer, gameRef) {
+    const newPlayerData = getInitialPlayerData();
+
+    if (isMultiplayer) {
+        // In multiplayer, a reset just clears this player's data.
+        // We only reset if it's our player.
+        // The overall game state (turn) might need adjusting if the game is in progress.
+        // For simplicity, we just clear our data. A full game reset needs a different mechanism.
+        gameRef.child('playerData').child(playerNum).set(newPlayerData);
+
+        // If both players reset, reset the game state
+        gameRef.child('playerData').once('value', (snapshot) => {
+            const allPlayersData = snapshot.val();
+            if(!allPlayersData[1].name && !allPlayersData[2].name) {
+                gameRef.child('gameState').set(resetGameState());
+            }
+        });
+
+    } else {
+        // Local game logic
+        playerData[playerNum] = newPlayerData;
+        localStorage.removeItem(`fantasyTeam_${playerNum}`);
+        
+        const otherPlayerNum = playerNum === 1 ? 2 : 1;
+
+        // If both players are reset, also reset the shared game state
+        if (!playerData[1].name && !playerData[2].name) {
+            setGameState(resetGameState());
+        } else if (playerData[otherPlayerNum].name) {
+            // If the other player is still in the game, make it their turn.
+            gameState.currentPlayer = otherPlayerNum;
+        }
+        
+        // Clear input values
+        document.getElementById(`player${playerNum}-name`).value = '';
+        
+        updateLayout();
+    }
 }

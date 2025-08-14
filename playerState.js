@@ -4,44 +4,45 @@
  * to check roster status.
  */
 
-// NEW: Centralized game state for turn management and game phase
-export const gameState = {
+// Centralized game state for turn management and game phase
+export let gameState = {
     currentPlayer: 1,
     phase: 'NAME_ENTRY', // Can be 'NAME_ENTRY', 'DRAFTING', 'COMPLETE'
 };
 
-export const playerData = {
-    1: { 
+export let playerData = {
+    1: getInitialPlayerData(),
+    2: getInitialPlayerData()
+};
+
+/**
+ * Creates an initial, empty player data object.
+ * @returns {object}
+ */
+export function getInitialPlayerData() {
+    return {
         name: '', 
-        avatar: null, // NEW: Added avatar property
+        avatar: null,
         team: null, 
         draftedPlayers: [], 
         rosterSlots: { 
             QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null 
         },
-        isSetupStarted: false // NEW: Flag to track if player's setup process has begun
-    },
-    2: { 
-        name: '', 
-        avatar: null, // NEW: Added avatar property
-        team: null, 
-        draftedPlayers: [], 
-        rosterSlots: {
-            QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null 
-        },
-        isSetupStarted: false // NEW: Flag to track if player's setup process has begun
-    }
-};
-
-/**
- * NEW: Switches the current player turn.
- */
-export function switchTurn() {
-    gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+        isSetupStarted: false
+    };
 }
 
 /**
- * NEW: Sets the current game phase.
+ * Switches the current player turn.
+ * @returns {object} The new game state.
+ */
+export function switchTurn() {
+    gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+    return gameState;
+}
+
+/**
+ * Sets the current game phase.
  * @param {string} newPhase - The new phase to set ('NAME_ENTRY', 'DRAFTING', 'COMPLETE').
  */
 export function setGamePhase(newPhase) {
@@ -49,11 +50,28 @@ export function setGamePhase(newPhase) {
 }
 
 /**
- * NEW: Resets the game state to its initial values.
+ * Resets the game state to its initial values.
  */
 export function resetGameState() {
     gameState.currentPlayer = 1;
     gameState.phase = 'NAME_ENTRY';
+    return gameState;
+}
+
+/**
+ * Overwrites the local game state with data from Firebase.
+ * @param {object} newGameState 
+ */
+export function setGameState(newGameState) {
+    gameState = newGameState;
+}
+
+/**
+ * Overwrites the local player data with data from Firebase.
+ * @param {object} newPlayerData 
+ */
+export function setPlayerData(newPlayerData) {
+    playerData = newPlayerData;
 }
 
 /**
