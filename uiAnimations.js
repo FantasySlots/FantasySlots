@@ -4,16 +4,18 @@
  */
 
 // UI Function: Show/Hide the team animation overlay
-export function showTeamAnimationOverlay(logoSrc = '', isAvatar = false) {
+export function showTeamAnimationOverlay(text, logoSrc = '', isAvatar = false) {
     const animationOverlay = document.getElementById('team-animation');
     const cyclingLogo = document.getElementById('cycling-logo');
-    const animationText = document.getElementById('animation-main-text');
-    
-    // Default text, can be overridden by other logic
-    animationText.textContent = 'Selecting your team...';
+    const animationText = document.getElementById('animation-text');
+
+    animationText.textContent = text;
 
     if (logoSrc) {
         cyclingLogo.src = logoSrc;
+        cyclingLogo.style.display = 'block';
+    } else {
+        cyclingLogo.style.display = 'none';
     }
     // Apply or remove the 'is-avatar' class based on the input
     if (isAvatar) {

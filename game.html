@@ -5,15 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy Slots</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="game-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-      "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js",
-        "firebase/database": "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"
-      }
-    }
-    </script>
 </head>
 <body>
     <div class="app-container">
@@ -23,19 +16,17 @@
             </a>
             <p class="subtitle">A randomly generated 1v1 fantasy experience.</p>
         </header>
-
-        <!-- New Multiplayer Info Box -->
+ 
+        <!-- NEW: Multiplayer Info Box -->
         <div id="multiplayer-info-box" style="display: none;">
-            <p><strong>Playing with a Friend!</strong></p>
-            <p id="share-link-container">Share this link with them to join: 
+            <p><strong>You are in a multiplayer match!</strong></p>
+            <p>Share this link with a friend to play:</p>
+            <div id="share-link-container">
                 <input type="text" id="share-link-input" readonly>
                 <button id="copy-link-btn">Copy</button>
-            </p>
-            <p class="game-status-text" id="game-status-text"></p>
+            </div>
+            <p class="game-status-text" id="game-status-text">Waiting for opponent to join...</p>
         </div>
-
-        <!-- Add Player 2 Button - For local play -->
-        <button class="add-player2-btn" id="add-player2-btn">Add Player 2</button>
 
         <div class="players-container">
             <!-- Player 1 Section -->
@@ -88,7 +79,7 @@
             <div class="team-animation-overlay" id="team-animation">
                 <div class="animation-container">
                     <img class="cycling-logo" id="cycling-logo" src="" alt="">
-                    <p class="animation-text" id="animation-main-text">Selecting your team...</p>
+                    <p class="animation-text" id="animation-text">Selecting your team...</p>
                 </div>
             </div>
 
@@ -187,12 +178,14 @@
         </div>
     </div>
 
-    <script type="module" src="firebase.js"></script>
     <script type="module" src="uiRenderer.js"></script>
     <script type="module" src="uiModals.js"></script>
     <script type="module" src="uiAnimations.js"></script>
     <script type="module" src="playerState.js"></script>
     <script type="module" src="utils.js"></script>
+    <script type="module" src="multiplayer.js"></script>
+    <script type="module" src="playerActions.js"></script>
+    <script type="module" src="gameFlow.js"></script>
     <script type="module" src="game.js"></script>
     <script type="module" src="api.js"></script>
     <script type="module" src="data.js"></script>

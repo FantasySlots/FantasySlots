@@ -4,6 +4,12 @@
  * to check roster status.
  */
 
+// NEW: Centralized game state for turn management and game phase
+export const gameState = {
+    currentPlayer: 1, // Default to 1, will be overwritten by multiplayer state
+    phase: 'NAME_ENTRY', // Default, will be overwritten by multiplayer state
+};
+
 export const playerData = {
     1: { 
         name: '', 
@@ -13,8 +19,7 @@ export const playerData = {
         rosterSlots: { 
             QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null 
         },
-        isSetupStarted: false, // NEW: Flag to track if player's setup process has begun
-        isPresent: false // NEW: for multiplayer
+        isSetupStarted: false // NEW: Flag to track if player's setup process has begun
     },
     2: { 
         name: '', 
@@ -24,19 +29,40 @@ export const playerData = {
         rosterSlots: {
             QB: null, RB: null, WR1: null, WR2: null, TE: null, Flex: null, DEF: null, K: null 
         },
-        isSetupStarted: false, // NEW: Flag to track if player's setup process has begun
-        isPresent: false // NEW: for multiplayer
+        isSetupStarted: false // NEW: Flag to track if player's setup process has begun
     }
 };
 
 /**
+ * NEW: Switches the current player turn.
+ */
+export function switchTurn() {
+    gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+}
+
+/**
+ * NEW: Sets the current game phase.
+ * @param {string} newPhase - The new phase to set ('NAME_ENTRY', 'DRAFTING', 'COMPLETE').
+ */
+export function setGamePhase(newPhase) {
+    gameState.phase = newPhase;
+}
+
+/**
+ * NEW: Resets the game state to its initial values.
+ */
+export function resetGameState() {
+    gameState.currentPlayer = 1;
+    gameState.phase = 'NAME_ENTRY';
+}
+
+/**
  * Checks if a player's fantasy roster is completely full.
  * @param {number} playerNum - The player number (1 or 2).
- * @param {object} pData - Optional player data object to check against (for multiplayer state).
  * @returns {boolean} True if the roster is full, false otherwise.
  */
-export function isFantasyRosterFull(playerNum, pData = playerData) {
-    const roster = pData[playerNum].rosterSlots;
+export function isFantasyRosterFull(playerNum) {
+    const roster = playerData[playerNum].rosterSlots;
     const requiredSlots = ['QB', 'RB', 'WR1', 'WR2', 'TE', 'Flex', 'DEF', 'K'];
     return requiredSlots.every(slot => roster[slot] !== null);
 }

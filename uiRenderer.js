@@ -90,22 +90,18 @@ export function updatePlayerContentDisplay(playerNum, playerDataForPlayer, isFan
 
     // Logic to toggle between inline NFL roster and fantasy roster display
     const hasTeamSelected = playerDataForPlayer.team !== null;
+    const hasAnyDraftedPlayer = Object.values(playerDataForPlayer.rosterSlots).some(slot => slot !== null);
 
-    if (isFantasyRosterFullFn(playerNum)) {
-        // Show fantasy roster if full.
-        inlineRosterEl.style.display = 'none';
-        fantasyRosterEl.style.display = 'block';
-    } else if (hasDraftedFromCurrentTeam) {
-        // If a player has already drafted from the current team, hide the inline roster
-        // and show the fantasy roster. The 'Roll Your Team' buttons will handle the next pick.
-        inlineRosterEl.style.display = 'none';
-        fantasyRosterEl.style.display = 'block';
-    } else if (hasTeamSelected) {
+    if (hasTeamSelected && !hasDraftedFromCurrentTeam) {
         // Show inline roster (draft interface) if a team is selected and no player drafted from it yet.
         inlineRosterEl.style.display = 'block';
         fantasyRosterEl.style.display = 'none';
+    } else if (hasAnyDraftedPlayer) {
+        // If any player has been drafted (either manually or via auto-draft), show the fantasy roster.
+        inlineRosterEl.style.display = 'none';
+        fantasyRosterEl.style.display = 'block';
     } else {
-        // If no team is selected yet, and roster is not full, hide both roster views.
+        // If no team is selected yet, and no players drafted, hide both roster views.
         // The "Roll Team" buttons will be visible in this state.
         inlineRosterEl.style.display = 'none';
         fantasyRosterEl.style.display = 'none';
@@ -113,7 +109,7 @@ export function updatePlayerContentDisplay(playerNum, playerDataForPlayer, isFan
 }
 
 // UI Function: Display draft interface (NFL Roster of a chosen team)
-export function displayDraftInterface(playerNum, teamAthletes, playerDataForPlayer, isFantasyRosterFullFn, isPlayerPositionUndraftableFn, draftPlayerCallback) {
+export function displayDraftInterface(playerNum, teamAthletes, playerDataForPlayer, opponentData, isFantasyRosterFullFn, isPlayerPositionUndraftableFn, draftPlayerCallback) {
     const playerContentArea = document.getElementById(`player${playerNum}-content-area`);
     const draftContainer = getOrCreateChild(playerContentArea, 'inline-roster');
     draftContainer.innerHTML = ''; // Clear previous content before rendering new
@@ -147,6 +143,8 @@ export function displayDraftInterface(playerNum, teamAthletes, playerDataForPlay
         }
     });
     
+    // NEW: Create a set of opponent's drafted player IDs for quick lookup.
+    const opponentDraftedIds = new Set(Object.values(opponentData.rosterSlots).filter(p => p).map(p => p.id));
     const canDraftFromCurrentTeam = playerDataForPlayer.draftedPlayers.length === 0;
     const rosterIsFull = isFantasyRosterFullFn(playerNum);
 
@@ -187,12 +185,15 @@ export function displayDraftInterface(playerNum, teamAthletes, playerDataForPlay
                 const draftActionText = playerDiv.querySelector('.draft-action-text');
 
                 const isAlreadyInFantasyRoster = Object.values(playerDataForPlayer.rosterSlots).some(slotPlayer => slotPlayer && slotPlayer.id === player.id);
+                const isDraftedByOpponent = opponentDraftedIds.has(player.id);
                 const noAvailableSlotForPosition = isPlayerPositionUndraftableFn(playerNum, position);
 
                 if (rosterIsFull || noAvailableSlotForPosition) {
                     playerDiv.classList.add('player-draft-card--disabled');
                     draftActionText.textContent = rosterIsFull ? 'Roster Full' : 'Slot Full';
-                    // No event listener for disabled cards
+                } else if (isDraftedByOpponent) {
+                    playerDiv.classList.add('player-draft-card--disabled');
+                    draftActionText.textContent = `Drafted by ${opponentData.name}`;
                 } else if (!canDraftFromCurrentTeam || isAlreadyInFantasyRoster) {
                     playerDiv.classList.add('player-draft-card--drafted');
                     draftActionText.textContent = isAlreadyInFantasyRoster ? 'Drafted' : 'Drafted (1/turn)';
@@ -251,12 +252,15 @@ export function displayDraftInterface(playerNum, teamAthletes, playerDataForPlay
     const draftActionTextDef = defOption.querySelector('.draft-action-text');
     
     const isDefAlreadyInFantasyRoster = Object.values(playerDataForPlayer.rosterSlots).some(slotPlayer => slotPlayer && slotPlayer.id === defPlayer.id);
+    const isDefDraftedByOpponent = opponentDraftedIds.has(defPlayer.id);
     const noAvailableSlotForDef = isPlayerPositionUndraftableFn(playerNum, 'DEF');
 
     if (rosterIsFull || noAvailableSlotForDef) {
         defOption.classList.add('player-draft-card--disabled');
         draftActionTextDef.textContent = rosterIsFull ? 'Roster Full' : 'Slot Full';
-        // No event listener for disabled cards
+    } else if (isDefDraftedByOpponent) {
+        defOption.classList.add('player-draft-card--disabled');
+        draftActionTextDef.textContent = `Drafted by ${opponentData.name}`;
     } else if (!canDraftFromCurrentTeam || isDefAlreadyInFantasyRoster) {
         defOption.classList.add('player-draft-card--drafted');
         draftActionTextDef.textContent = isDefAlreadyInFantasyRoster ? 'Drafted' : 'Drafted (1/turn)';

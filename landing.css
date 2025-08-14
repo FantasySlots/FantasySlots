@@ -48,6 +48,65 @@ body {
     font-size: 1.25rem;
     color: #8A9BBF; /* Muted blue-grey */
     font-weight: 500;
+    margin-bottom: 1.5rem; /* Added margin for spacing */
+}
+
+/* NEW: Multiplayer Info Box */
+#multiplayer-info-box {
+    background: rgba(10, 17, 40, 0.95);
+    border: 1px solid rgba(138, 155, 191, 0.2);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    margin: 0 auto 2rem auto;
+    max-width: 800px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+#multiplayer-info-box p {
+    margin-bottom: 0.5rem;
+}
+#multiplayer-info-box strong {
+    color: #AE2012;
+    font-size: 1.2rem;
+}
+#share-link-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+#share-link-input {
+    flex-grow: 1;
+    max-width: 400px;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(138, 155, 191, 0.3);
+    border-radius: 0.5rem;
+    color: #E0E6EF;
+    text-align: center;
+}
+#copy-link-btn {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #1F3F6D, #0A2240);
+    border: none;
+    border-radius: 0.5rem;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+#copy-link-btn:hover {
+    transform: translateY(-1px);
+}
+.game-status-text {
+    margin-top: 1rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #f59e0b; /* Start with a 'waiting' color */
+    transition: color 0.3s ease;
 }
 
 .players-container {
@@ -90,23 +149,6 @@ body {
 .player-section:hover {
     transform: translateY(-5px);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); /* Stronger shadow on hover */
-}
-/* NEW: Back button for landing page */
-.back-button {
-    background: none;
-    border: 1px solid #8A9BBF;
-    color: #8A9BBF;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    margin-top: 1rem;
-    transition: all 0.2s ease;
-    font-weight: 600;
-}
-
-.back-button:hover {
-    background: rgba(138, 155, 191, 0.2);
-    color: #E0E6EF; /* Off-white/light blue */
 }
 
 /* NEW: Styles for the player section header row */
@@ -417,6 +459,12 @@ body {
     animation: fadeIn 0.3s ease;
 }
 
+.team-animation-overlay .animation-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
 .animation-container {
     text-align: center;
 }
@@ -431,7 +479,7 @@ body {
     object-fit: contain;
     background-color: #1f2937;
     padding: 5px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Subtle border */
 }
 
 /* Add filter for avatar mode to cycling-logo as well */
@@ -1091,6 +1139,15 @@ body {
     box-shadow: 0 15px 30px rgba(174, 32, 18, 0.5);
 }
 
+.landing-button.play-locally-btn {
+    background: linear-gradient(135deg, #AE2012, #8B0000); /* Red gradient matching logo */
+}
+
+.landing-button.play-locally-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(174, 32, 18, 0.5);
+}
+
 .landing-button.view-stats-btn {
     background: linear-gradient(135deg, #1F3F6D, #0A2240); /* Dark blue gradient matching logo banner */
 }
@@ -1115,13 +1172,109 @@ body {
     left: 100%;
 }
 
+/* NEW: Back button for landing page */
+.back-button {
+    background: none;
+    border: 1px solid #8A9BBF;
+    color: #8A9BBF;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.back-button:hover {
+    background: rgba(138, 155, 191, 0.2);
+    color: #E0E6EF; /* Off-white/light blue */
+}
+
 @media (max-width: 768px) {
+    .players-container,
+    .players-container.single-player-view,
+    .players-container.two-player-view { /* Apply to all states on small screens */
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    /* Ensure both sections are visible on small screens to avoid confusion */
+    .player-section {
+        display: block !important;
+    }
+    
     .site-logo {
         max-width: 300px; /* Smaller logo on small screens */
     }
 
     .subtitle {
         font-size: 1rem;
+    }
+    
+    .player-section {
+        padding: 1.5rem;
+    }
+
+    .player-stats-content h2 {
+        font-size: 1.5rem;
+    }
+
+    /* Player selection cards inside inline roster on small screens */
+    .inline-roster > div > div {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on small screens */
+    }
+
+    .team-selection {
+        flex-direction: column; /* Stack buttons vertically on small screens */
+    }
+
+    .select-team-btn,
+    .auto-draft-btn {
+        min-width: unset; /* Remove min-width for stacking */
+        width: 100%;
+    }
+    .auto-draft-btn {
+        margin-top: 1rem; /* Re-add margin when stacked */
+    }
+
+    .name-input-container {
+        flex-direction: column; /* Stack input, avatar, button vertically */
+        align-items: stretch; /* Stretch items to fill width */
+    }
+
+    .name-input,
+    .confirm-name-btn {
+        width: 100%;
+        margin-bottom: 0.75rem; /* Space between stacked items */
+    }
+    
+    .avatar-selection-area {
+        width: 100%; /* Take full width */
+        text-align: center; /* Center preview/options */
+        margin-bottom: 0.75rem;
+    }
+    
+    .selected-avatar-preview {
+        margin: 0 auto; /* Center the preview */
+    }
+    
+    /* Avatar modal content on smaller screens */
+    .avatar-selection-modal-content {
+        padding: 1.5rem;
+    }
+
+    .avatar-selection-modal-content .modal-title {
+        font-size: 1.5rem;
+    }
+
+    .avatar-options-grid {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); /* Smaller avatars on small screens */
+        gap: 0.75rem;
+    }
+
+    .avatar-option {
+        width: 50px;
+        height: 50px;
     }
 
     /* Landing page responsiveness */
